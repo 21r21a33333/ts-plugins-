@@ -34,6 +34,25 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.12.2)
 
+  packages/pluginctl:
+    dependencies:
+      '@balance/plugin-codegen':
+        specifier: workspace:*
+        version: link:../plugin-codegen
+      zod:
+        specifier: ^4.1.12
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.0
+        version: 24.12.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.12.2)
+
 packages:
 
   '@bufbuild/buf-darwin-arm64@1.67.0':
@@ -656,6 +675,9 @@ packages:
     engines: {node: '>=8'}
     hasBin: true
 
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+
 snapshots:
 
   '@bufbuild/buf-darwin-arm64@1.67.0':
@@ -1156,3 +1178,5 @@ snapshots:
     dependencies:
       siginfo: 2.0.0
       stackback: 0.0.2
+
+  zod@4.3.6: {}

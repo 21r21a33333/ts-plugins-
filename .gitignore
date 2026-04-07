@@ -1,6 +1,7 @@
 node_modules/
 dist/
 target/
+Cargo.lock
 .turbo/
 .superpowers/
 .pnpm-store/
