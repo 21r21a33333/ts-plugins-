@@ -35,6 +35,7 @@ import {
   tryDecodeFrames,
 } from "./protocol.js";
 import { PluginExecutionError } from "./errors.js";
+import { RuntimeMetrics, type MetricOutcome } from "./metrics.js";
 
 type SchemaAwarePluginMethodDefinition = PluginMethodDefinition & {
   inputSchema: DescMessage;
@@ -50,6 +51,7 @@ export interface StartPluginSocketRuntimeServerInput
   socketPath: string;
   service: PluginServiceDefinition;
   kvConfig?: RuntimeKvConfig;
+  metrics?: RuntimeMetrics;
   memoryKvBackend?: MemoryKvBackend;
   createWorkerPool?: (
     options: PluginSocketWorkerPoolOptions,
@@ -107,6 +109,7 @@ export async function startPluginSocketRuntimeServer(
         kv: kvStore,
       }),
   });
+  const metrics = resolveMetrics(input);
   const methodsById = new Map(
     service.methods.map((method) => [method.methodId, method] as const),
   );
@@ -188,6 +191,7 @@ export async function startPluginSocketRuntimeServer(
       payload: Uint8Array,
       traceContext: WireEnvelope["traceContext"],
     ): Promise<WireEnvelope> {
+      const startedAt = Date.now();
       const method = methodsById.get(methodId);
       if (method === undefined) {
         return createFrameworkErrorEnvelope({
@@ -204,6 +208,7 @@ export async function startPluginSocketRuntimeServer(
           method.name === "Init"
             ? input.manifest.runtime?.initTimeoutMs
             : input.manifest.runtime?.requestTimeoutMs;
+        updateQueueDepth(metrics, input.manifest.id, workerPool);
         const invocation =
           workerPool !== undefined && method.name !== "Init"
             ? workerPool.run(
@@ -232,6 +237,13 @@ export async function startPluginSocketRuntimeServer(
         if (method.name === "Init") {
           lastInitRequest = request;
         }
+        metrics?.recordRequest(
+          input.manifest.id,
+          method.name,
+          determineMetricOutcome(result),
+          Date.now() - startedAt,
+        );
+        updateQueueDepth(metrics, input.manifest.id, workerPool);
 
         return createRpcResponseEnvelope({
           requestId,
@@ -244,6 +256,13 @@ export async function startPluginSocketRuntimeServer(
           error instanceof PluginExecutionError
             ? FrameworkErrorCode.UNKNOWN
             : FrameworkErrorCode.DECODE_FAILED;
+        metrics?.recordRequest(
+          input.manifest.id,
+          method.name,
+          "framework_failure",
+          Date.now() - startedAt,
+        );
+        updateQueueDepth(metrics, input.manifest.id, workerPool);
 
         return createFrameworkErrorEnvelope({
           requestId,
@@ -344,6 +363,40 @@ function createWorkerPoolIfNeeded(
     concurrency: normalizeConcurrency(concurrency),
     idleTimeoutMs: input.manifest.runtime?.idleEvictionMs,
   });
+}
+
+function resolveMetrics(
+  input: StartPluginSocketRuntimeServerInput,
+): RuntimeMetrics | undefined {
+  if (input.manifest.observability?.emitMetrics === false) {
+    return undefined;
+  }
+
+  return input.metrics ?? new RuntimeMetrics();
+}
+
+function updateQueueDepth(
+  metrics: RuntimeMetrics | undefined,
+  pluginId: string,
+  workerPool: PluginSocketWorkerPool | undefined,
+): void {
+  metrics?.setQueueDepth(pluginId, workerPool?.queueSize() ?? 0);
+}
+
+function determineMetricOutcome(result: unknown): MetricOutcome {
+  if (
+    result !== null
+    && typeof result === "object"
+    && "outcome" in result
+    && typeof result.outcome === "object"
+    && result.outcome !== null
+    && "case" in result.outcome
+    && result.outcome.case === "error"
+  ) {
+    return "typed_error";
+  }
+
+  return "success";
 }
 
 function stripSchemas(

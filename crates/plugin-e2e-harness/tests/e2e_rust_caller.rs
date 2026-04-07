@@ -2,7 +2,9 @@
 
 use std::process::Command;
 
-use plugin_e2e_harness::{build_workspace_targets, spawn_plugin_process, PluginProcessSpec};
+use plugin_e2e_harness::{
+    build_workspace_targets, read_manifest_json, spawn_plugin_process, PluginProcessSpec,
+};
 
 #[test]
 fn rust_caller_example_invokes_a_live_plugin_process() {
@@ -14,7 +16,7 @@ fn rust_caller_example_invokes_a_live_plugin_process() {
     ]);
 
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
-        manifest_json: r#"{"id":"quote-plugin","version":"0.1.0"}"#,
+        manifest_json: read_manifest_json("examples/quote-plugin/plugin.json"),
         entrypoint_relative: "examples/quote-plugin/dist/src/index.js",
         descriptor_relative: "descriptors/contracts.binpb",
         service_name: "balance.plugins.quote.v1.QuotePluginService",

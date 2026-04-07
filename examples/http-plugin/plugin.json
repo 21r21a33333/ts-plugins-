@@ -1,15 +1,30 @@
 {
+  "schemaVersion": 1,
   "id": "http-plugin",
   "version": "0.1.0",
   "main": "./dist/src/index.js",
   "contract": {
     "service": "balance.plugins.http.v1.HttpPluginService",
-    "descriptorSet": "./descriptors/contracts.binpb"
+    "descriptorSet": "./descriptors/contracts.binpb",
+    "protoSources": [
+      "./proto/balance/plugins/http/v1/http_plugin.proto"
+    ]
   },
-  "activation": {
-    "mode": "lazy"
+  "runtime": {
+    "language": "node",
+    "activation": {
+      "mode": "lazy"
+    },
+    "concurrency": {
+      "mode": "parallel-safe"
+    },
+    "initTimeoutMs": 5000,
+    "requestTimeoutMs": 10000,
+    "idleEvictionMs": 300000
   },
-  "concurrency": {
-    "mode": "parallel-safe"
+  "observability": {
+    "emitLogs": true,
+    "emitTraces": true,
+    "emitMetrics": true
   }
 }

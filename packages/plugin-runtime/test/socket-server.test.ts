@@ -22,6 +22,7 @@ import {
 } from "@balance/plugin-generated/generated/balance/plugins/quote/v1/quote_plugin_pb";
 
 import { definePlugin } from "../src/index.js";
+import { RuntimeMetrics } from "../src/metrics.js";
 import { startPluginSocketRuntimeServer } from "../src/socket-server.js";
 
 type SchemaAwareRuntimeService = PluginServiceDefinition & {
@@ -691,6 +692,107 @@ describe("startPluginSocketRuntimeServer", () => {
       idleTimeoutMs: 12_345,
     });
 
+    await server.close();
+  });
+
+  it("records request metrics on the socket runtime hot path", async () => {
+    const tempDir = await mkdtemp(join(os.tmpdir(), "plugin-runtime-socket-"));
+    tempDirs.push(tempDir);
+    const socketPath = join(tempDir, "plugin.sock");
+    const metrics = new RuntimeMetrics();
+
+    const server = await startPluginSocketRuntimeServer({
+      socketPath,
+      manifest: {
+        id: "quote-plugin",
+        version: "1.0.0",
+        observability: {
+          emitMetrics: true,
+        },
+      },
+      service: runtimeService,
+      metrics,
+      loadModule: async () => ({
+        default: definePlugin({
+          async init() {
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  pluginName: "quote-plugin",
+                  pluginVersion: "1.0.0",
+                },
+              },
+            };
+          },
+          async getPrice() {
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  price: "12.34",
+                  currency: "USD",
+                  expiresAt: "2030-01-01T00:00:00Z",
+                },
+              },
+            };
+          },
+        }),
+      }),
+    });
+
+    const socket = await connect(socketPath);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 1n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 2026714057,
+            payload: toBinary(
+              InitRequestSchema,
+              create(InitRequestSchema, {
+                pluginInstanceId: "quote-plugin",
+                environment: "production",
+                config: {},
+              }),
+            ),
+          },
+        },
+      }),
+    );
+    await readEnvelope(socket);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 2n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 758358830,
+            payload: toBinary(
+              GetPriceRequestSchema,
+              create(GetPriceRequestSchema, {
+                asset: "BTC",
+                amount: "0.5",
+              }),
+            ),
+          },
+        },
+      }),
+    );
+    await readEnvelope(socket);
+
+    expect(metrics.requestCount("quote-plugin", "Init", "success")).toBe(1);
+    expect(metrics.requestCount("quote-plugin", "GetPrice", "success")).toBe(1);
+    expect(metrics.currentQueueDepth("quote-plugin")).toBe(0);
+
+    socket.destroy();
     await server.close();
   });
 });

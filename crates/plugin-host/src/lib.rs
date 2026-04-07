@@ -18,8 +18,8 @@ pub use client::{PluginHost, PluginHostError, PluginTransport};
 pub use dynamic::{DynamicMethod, stable_method_id};
 pub use health::RuntimeHealth;
 pub use registry::{
-    ActivationMode, ActivationStatus, PluginManifest, PluginRegistry,
-    PluginRegistryEntry,
+    ActivationMode, ActivationStatus, ConcurrencyMode, ObservabilityConfig,
+    PluginManifest, PluginManifestLoadError, PluginRegistry, PluginRegistryEntry,
 };
 pub use runtime_handle::{HostRuntimeConfig, RuntimeFactory, RuntimeHandle, RuntimeInitContext};
 pub use scheduler::{ScheduledPluginHost, ScheduledPluginHostConfig};

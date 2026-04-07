@@ -1,15 +1,30 @@
 {
+  "schemaVersion": 1,
   "id": "calculation-plugin",
   "version": "0.1.0",
   "main": "./dist/src/index.js",
   "contract": {
     "service": "balance.plugins.calc.v1.CalcPluginService",
-    "descriptorSet": "./descriptors/contracts.binpb"
+    "descriptorSet": "./descriptors/contracts.binpb",
+    "protoSources": [
+      "./proto/balance/plugins/calc/v1/calc_plugin.proto"
+    ]
   },
-  "activation": {
-    "mode": "lazy"
+  "runtime": {
+    "language": "node",
+    "activation": {
+      "mode": "lazy"
+    },
+    "concurrency": {
+      "mode": "serial"
+    },
+    "initTimeoutMs": 5000,
+    "requestTimeoutMs": 10000,
+    "idleEvictionMs": 300000
   },
-  "concurrency": {
-    "mode": "serial"
+  "observability": {
+    "emitLogs": true,
+    "emitTraces": true,
+    "emitMetrics": true
   }
 }

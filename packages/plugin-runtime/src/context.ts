@@ -95,17 +95,19 @@ export interface PluginContextFactory {
 
 export function createPluginContext(input: PluginContextFactoryInput): PluginContext {
   const traceContext = extractTraceContext(input.traceContext) ?? undefined;
+  const logSink = resolveLogSink(input);
+  const traceSink = resolveTraceSink(input);
   return {
     logger: createStructuredLogger({
       pluginId: input.manifest.id,
       runtimeInstanceId: input.runtimeInstanceId,
       requestId: input.requestId,
       traceId: traceContext?.traceId ?? null,
-      sink: input.logSink,
+      sink: logSink,
     }),
     tracer: createPluginTracer({
       traceContext,
-      sink: input.traceSink,
+      sink: traceSink,
     }),
     kv: input.kv ?? createNoopKv(),
     config: input.config,
@@ -123,6 +125,52 @@ export function createPluginContext(input: PluginContextFactoryInput): PluginCon
       traceId: traceContext?.traceId ?? null,
     },
   };
+}
+
+function resolveLogSink(
+  input: PluginContextFactoryInput,
+): ((event: LogEvent) => void) | undefined {
+  if (input.manifest.observability?.emitLogs === false) {
+    return undefined;
+  }
+
+  if (input.logSink === undefined && isTestEnvironment()) {
+    return undefined;
+  }
+
+  return input.logSink ?? defaultLogSink;
+}
+
+function resolveTraceSink(
+  input: PluginContextFactoryInput,
+): ((event: TraceEvent) => void) | undefined {
+  if (input.manifest.observability?.emitTraces === false) {
+    return undefined;
+  }
+
+  if (input.traceSink === undefined && isTestEnvironment()) {
+    return undefined;
+  }
+
+  return input.traceSink ?? defaultTraceSink;
+}
+
+function defaultLogSink(event: LogEvent): void {
+  console.log(JSON.stringify({
+    kind: "plugin-log",
+    ...event,
+  }));
+}
+
+function defaultTraceSink(event: TraceEvent): void {
+  console.log(JSON.stringify({
+    kind: "plugin-trace",
+    ...event,
+  }));
+}
+
+function isTestEnvironment(): boolean {
+  return process.env.VITEST !== undefined || process.env.NODE_ENV === "test";
 }
 
 function createNoopKv(): PluginKv {

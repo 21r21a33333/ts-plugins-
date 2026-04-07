@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package balance.plugins.calc.v1;
+
+message PluginError {
+  string code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}
+
+message InitRequest {
+  string plugin_instance_id = 1;
+  string environment = 2;
+  map<string, string> config = 3;
+}
+
+message InitSuccess {
+  string plugin_name = 1;
+  string plugin_version = 2;
+}
+
+message InitResponse {
+  oneof outcome {
+    InitSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+message AddRequest {
+  double left = 1;
+  double right = 2;
+}
+
+message AddSuccess {
+  double sum = 1;
+}
+
+message AddResponse {
+  oneof outcome {
+    AddSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+service CalcPluginService {
+  rpc Init(InitRequest) returns (InitResponse);
+  rpc Add(AddRequest) returns (AddResponse);
+}

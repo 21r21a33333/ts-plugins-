@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     cell::RefCell,
     rc::Rc,
     time::{Duration, Instant},
@@ -39,10 +40,10 @@ impl Clock for MockClock {
     }
 }
 
-#[derive(Debug)]
 pub struct ActivationManager<TFactory, TClock> {
     registry: PluginRegistry,
     runtime_factory: TFactory,
+    active_runtimes: BTreeMap<String, Box<dyn crate::runtime_handle::RuntimeHandle>>,
     clock: TClock,
     retry_backoff: Duration,
     runtime_config: HostRuntimeConfig,
@@ -63,6 +64,7 @@ where
         Self {
             registry,
             runtime_factory,
+            active_runtimes: BTreeMap::new(),
             clock,
             retry_backoff,
             runtime_config,
@@ -107,6 +109,8 @@ where
         entry.activation_status = ActivationStatus::Ready;
         entry.runtime_active = true;
         entry.next_retry_at = None;
+        entry.last_activity_at = Some(now);
+        self.active_runtimes.insert(plugin_id.to_string(), runtime);
         Ok(true)
     }
 
@@ -123,6 +127,69 @@ where
     pub fn registry(&self) -> &PluginRegistry {
         &self.registry
     }
+
+    pub fn deactivate(&mut self, plugin_id: &str) -> Result<(), ActivationError> {
+        self.shutdown_runtime(plugin_id)?;
+        if self.registry.deactivate(plugin_id) {
+            Ok(())
+        } else {
+            Err(ActivationError::UnknownPlugin(plugin_id.to_string()))
+        }
+    }
+
+    pub fn record_activity(&mut self, plugin_id: &str) -> Result<(), ActivationError> {
+        let entry = self
+            .registry
+            .entry_mut(plugin_id)
+            .ok_or_else(|| ActivationError::UnknownPlugin(plugin_id.to_string()))?;
+        entry.last_activity_at = Some(self.clock.now());
+        Ok(())
+    }
+
+    pub fn evict_idle_plugins(
+        &mut self,
+        idle_timeout: Duration,
+    ) -> Result<Vec<String>, ActivationError> {
+        let now = self.clock.now();
+        let mut evicted = Vec::new();
+
+        for plugin_id in self.registry.plugin_ids() {
+            let should_evict = {
+                let entry = match self.registry.entry_mut(&plugin_id) {
+                    Some(entry) => entry,
+                    None => continue,
+                };
+                entry.runtime_active
+                    && entry
+                        .last_activity_at
+                        .map(|last_activity_at| now >= last_activity_at + idle_timeout)
+                        .unwrap_or(false)
+            };
+
+            if should_evict {
+                self.shutdown_runtime(&plugin_id)?;
+                self.registry.deactivate(&plugin_id);
+                evicted.push(plugin_id);
+            }
+        }
+
+        evicted.sort();
+        evicted.dedup();
+        Ok(evicted)
+    }
+
+    fn shutdown_runtime(&mut self, plugin_id: &str) -> Result<(), ActivationError> {
+        if let Some(mut runtime) = self.active_runtimes.remove(plugin_id) {
+            runtime
+                .shutdown()
+                .map_err(|message| ActivationError::ShutdownFailed {
+                    plugin_id: plugin_id.to_string(),
+                    message,
+                })?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -131,6 +198,7 @@ pub enum ActivationError {
     RuntimeStart(String),
     InitializationFailed { plugin_id: String, message: String },
     BackoffActive { plugin_id: String },
+    ShutdownFailed { plugin_id: String, message: String },
 }
 
 impl core::fmt::Display for ActivationError {
@@ -143,6 +211,9 @@ impl core::fmt::Display for ActivationError {
             }
             Self::BackoffActive { plugin_id } => {
                 write!(f, "plugin {plugin_id} is still in activation backoff")
+            }
+            Self::ShutdownFailed { plugin_id, message } => {
+                write!(f, "plugin {plugin_id} failed shutdown: {message}")
             }
         }
     }

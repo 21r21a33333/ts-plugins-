@@ -26,6 +26,14 @@ export async function validatePluginManifest(
   const mainPath = resolve(rootDir, manifest.main);
   await assertPathExists(mainPath, `Plugin main entrypoint does not exist: ${manifest.main}`);
 
+  if (manifest.sourceMap !== undefined) {
+    const sourceMapPath = resolve(rootDir, manifest.sourceMap);
+    await assertPathExists(
+      sourceMapPath,
+      `Plugin source map does not exist: ${manifest.sourceMap}`,
+    );
+  }
+
   const descriptorPath = resolve(rootDir, manifest.contract.descriptorSet);
   await assertPathExists(
     descriptorPath,

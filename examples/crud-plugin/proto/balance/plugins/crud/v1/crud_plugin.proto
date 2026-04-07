@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package balance.plugins.crud.v1;
+
+message PluginError {
+  string code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}
+
+message InitRequest {
+  string plugin_instance_id = 1;
+  string environment = 2;
+  map<string, string> config = 3;
+}
+
+message InitSuccess {
+  string plugin_name = 1;
+  string plugin_version = 2;
+}
+
+message InitResponse {
+  oneof outcome {
+    InitSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+message Note {
+  string id = 1;
+  string title = 2;
+  string body = 3;
+  uint32 version = 4;
+}
+
+message CreateNoteRequest {
+  string id = 1;
+  string title = 2;
+  string body = 3;
+}
+
+message CreateNoteResponse {
+  oneof outcome {
+    Note ok = 1;
+    PluginError error = 2;
+  }
+}
+
+message GetNoteRequest {
+  string id = 1;
+}
+
+message GetNoteResponse {
+  oneof outcome {
+    Note ok = 1;
+    PluginError error = 2;
+  }
+}
+
+message UpdateNoteRequest {
+  string id = 1;
+  string title = 2;
+  string body = 3;
+}
+
+message UpdateNoteResponse {
+  oneof outcome {
+    Note ok = 1;
+    PluginError error = 2;
+  }
+}
+
+message DeleteNoteRequest {
+  string id = 1;
+}
+
+message DeleteNoteSuccess {
+  string id = 1;
+}
+
+message DeleteNoteResponse {
+  oneof outcome {
+    DeleteNoteSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+message ListNotesRequest {}
+
+message ListNotesSuccess {
+  repeated Note notes = 1;
+  uint32 cache_hits = 2;
+}
+
+message ListNotesResponse {
+  oneof outcome {
+    ListNotesSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+service CrudPluginService {
+  rpc Init(InitRequest) returns (InitResponse);
+  rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse);
+  rpc GetNote(GetNoteRequest) returns (GetNoteResponse);
+  rpc UpdateNote(UpdateNoteRequest) returns (UpdateNoteResponse);
+  rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse);
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse);
+}

@@ -6,7 +6,9 @@ use std::{
     thread,
 };
 
-use plugin_e2e_harness::{build_workspace_targets, spawn_plugin_process, PluginProcessSpec};
+use plugin_e2e_harness::{
+    build_workspace_targets, read_manifest_json, spawn_plugin_process, PluginProcessSpec,
+};
 use plugin_host::{DynamicMethod, PluginHost, UnixSocketTransport};
 
 mod http_v1 {
@@ -44,7 +46,7 @@ fn http_demo_plugin_fetches_a_local_api_end_to_end() {
     });
 
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
-        manifest_json: r#"{"id":"http-plugin","version":"0.1.0"}"#,
+        manifest_json: read_manifest_json("examples/http-plugin/plugin.json"),
         entrypoint_relative: "examples/http-plugin/dist/src/index.js",
         descriptor_relative: "descriptors/contracts.binpb",
         service_name: "balance.plugins.http.v1.HttpPluginService",

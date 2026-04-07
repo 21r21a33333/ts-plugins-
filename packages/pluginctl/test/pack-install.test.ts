@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import * as tar from "tar";
 
 import * as pluginctl from "../src/index.js";
 
@@ -248,6 +249,43 @@ describe("packPlugin and installPlugin", () => {
         source: {
           kind: "folder",
           path: rootDir,
+        },
+      }),
+    ).rejects.toThrow(/integrity/i);
+  });
+
+  it("rejects a tarball install when the packaged manifest is missing integrity metadata", async () => {
+    const { rootDir, pluginHome } = await createPluginFixture();
+    const outputDir = await mkdtemp(join(tmpdir(), "pluginctl-output-"));
+    tempRoots.push(outputDir);
+    const tarballPath = join(outputDir, "quote-plugin-1.0.0.tgz");
+
+    await tar.create(
+      {
+        gzip: true,
+        cwd: rootDir,
+        file: tarballPath,
+        portable: true,
+      },
+      ["."],
+    );
+
+    await expect(
+      (
+        pluginctl as {
+          installPlugin: (input: {
+            pluginHome: string;
+            source:
+              | { kind: "folder"; path: string }
+              | { kind: "tarball"; path: string }
+              | { kind: "npm"; spec: string };
+          }) => Promise<unknown>;
+        }
+      ).installPlugin({
+        pluginHome,
+        source: {
+          kind: "tarball",
+          path: tarballPath,
         },
       }),
     ).rejects.toThrow(/integrity/i);

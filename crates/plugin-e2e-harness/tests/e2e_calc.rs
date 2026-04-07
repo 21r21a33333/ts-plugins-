@@ -1,6 +1,8 @@
 #![cfg(unix)]
 
-use plugin_e2e_harness::{build_workspace_targets, spawn_plugin_process, PluginProcessSpec};
+use plugin_e2e_harness::{
+    build_workspace_targets, read_manifest_json, spawn_plugin_process, PluginProcessSpec,
+};
 use plugin_host::{DynamicMethod, PluginHost, UnixSocketTransport};
 
 mod calc_v1 {
@@ -20,7 +22,7 @@ fn calculation_demo_plugin_adds_numbers_end_to_end() {
     ]);
 
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
-        manifest_json: r#"{"id":"calculation-plugin","version":"0.1.0"}"#,
+        manifest_json: read_manifest_json("examples/calculation-plugin/plugin.json"),
         entrypoint_relative: "examples/calculation-plugin/dist/src/index.js",
         descriptor_relative: "descriptors/contracts.binpb",
         service_name: "balance.plugins.calc.v1.CalcPluginService",

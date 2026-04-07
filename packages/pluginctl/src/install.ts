@@ -52,6 +52,11 @@ export async function installPlugin(
     const validated = await validatePluginManifest(join(packageRoot, "plugin.json"));
     const packageSha256 = await computePackageDigest(packageRoot);
     const expectedPackageSha256 = validated.manifest.integrity?.packageSha256;
+    if (input.source.kind !== "folder" && expectedPackageSha256 === undefined) {
+      throw new Error(
+        "Plugin package integrity metadata is required for tarball and npm installs",
+      );
+    }
     if (
       expectedPackageSha256 !== undefined &&
       expectedPackageSha256 !== packageSha256

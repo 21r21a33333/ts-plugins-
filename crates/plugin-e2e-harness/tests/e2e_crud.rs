@@ -7,7 +7,9 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use plugin_e2e_harness::{build_workspace_targets, spawn_plugin_process, PluginProcessSpec};
+use plugin_e2e_harness::{
+    build_workspace_targets, read_manifest_json, spawn_plugin_process, PluginProcessSpec,
+};
 use plugin_host::{DynamicMethod, PluginHost, UnixSocketTransport};
 use redis::Commands;
 use serde_json::json;
@@ -41,7 +43,7 @@ fn crud_demo_plugin_persists_db_state_and_redis_kv_across_restart() {
     let db_path = temp_file_path("crud-plugin", "sqlite");
 
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
-        manifest_json: r#"{"id":"crud-plugin","version":"0.1.0"}"#,
+        manifest_json: read_manifest_json("examples/crud-plugin/plugin.json"),
         entrypoint_relative: "examples/crud-plugin/dist/src/index.js",
         descriptor_relative: "descriptors/contracts.binpb",
         service_name: "balance.plugins.crud.v1.CrudPluginService",
@@ -85,7 +87,7 @@ fn crud_demo_plugin_persists_db_state_and_redis_kv_across_restart() {
     assert_eq!(last_note_id, "\"note-1\"");
 
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
-        manifest_json: r#"{"id":"crud-plugin","version":"0.1.0"}"#,
+        manifest_json: read_manifest_json("examples/crud-plugin/plugin.json"),
         entrypoint_relative: "examples/crud-plugin/dist/src/index.js",
         descriptor_relative: "descriptors/contracts.binpb",
         service_name: "balance.plugins.crud.v1.CrudPluginService",

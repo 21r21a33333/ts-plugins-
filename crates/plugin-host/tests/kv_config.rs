@@ -92,4 +92,8 @@ impl RuntimeHandle for CaptureRuntime {
         *self.captured.borrow_mut() = Some(init_context.clone());
         Ok(())
     }
+
+    fn shutdown(&mut self) -> Result<(), String> {
+        Ok(())
+    }
 }

@@ -48,6 +48,7 @@ pub struct RuntimeInitContext {
 
 pub trait RuntimeHandle {
     fn init(&mut self, init_context: &RuntimeInitContext) -> Result<(), String>;
+    fn shutdown(&mut self) -> Result<(), String>;
 }
 
 pub trait RuntimeFactory {

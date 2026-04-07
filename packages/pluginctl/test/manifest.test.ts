@@ -149,4 +149,18 @@ describe("validatePluginManifest", () => {
       ).validatePluginManifest(fixture.manifestPath),
     ).rejects.toThrow(/main/i);
   });
+
+  it("rejects a manifest whose source map path does not exist", async () => {
+    const fixture = await createPluginFixture({
+      sourceMap: "./dist/index.js.map",
+    });
+
+    await expect(
+      (
+        pluginctl as {
+          validatePluginManifest: (manifestPath: string) => Promise<unknown>;
+        }
+      ).validatePluginManifest(fixture.manifestPath),
+    ).rejects.toThrow(/source map/i);
+  });
 });

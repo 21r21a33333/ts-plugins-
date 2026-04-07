@@ -11,7 +11,7 @@ use std::{
 };
 
 pub struct PluginProcessSpec<'a> {
-    pub manifest_json: &'a str,
+    pub manifest_json: String,
     pub entrypoint_relative: &'a str,
     pub descriptor_relative: &'a str,
     pub service_name: &'a str,
@@ -102,6 +102,11 @@ pub fn workspace_root() -> PathBuf {
         .parent()
         .expect("workspace path should exist")
         .to_path_buf()
+}
+
+pub fn read_manifest_json(relative_path: &str) -> String {
+    std::fs::read_to_string(workspace_root().join(relative_path))
+        .expect("example manifest should be readable")
 }
 
 pub fn wait_for_socket(socket_path: &Path) {

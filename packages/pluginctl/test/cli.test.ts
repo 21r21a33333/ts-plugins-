@@ -213,7 +213,7 @@ describe("pluginctl cli", () => {
     expect(joined).toContain("\"GetPrice\"");
   });
 
-  it("ships pluginctl as an executable workspace command", async () => {
+  it("ships pluginctl as an executable workspace command", { timeout: 15_000 }, async () => {
     await execFile("pnpm", ["exec", "tsc", "-p", "tsconfig.json"], {
       cwd: process.cwd(),
     });

@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 
 import type { PluginServiceDefinition } from "@balance/plugin-codegen";
 import type { RuntimeKvConfig } from "./kv.js";
+import type { PluginRuntimeManifest } from "./context.js";
 
 import { loadRuntimeServiceDefinition } from "./service-definition.js";
 import { startPluginSocketRuntimeServer } from "./socket-server.js";
@@ -9,10 +10,7 @@ import { startPluginSocketRuntimeServer } from "./socket-server.js";
 interface RuntimeProcessEnvironment {
   socketPath: string;
   entrypointPath: string;
-  manifest: {
-    id: string;
-    version: string;
-  };
+  manifest: PluginRuntimeManifest;
   kvConfig?: RuntimeKvConfig;
   descriptorPath?: string;
   serviceName?: string;

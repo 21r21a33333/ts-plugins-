@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package balance.plugins.quote.v1;
+
+message PluginError {
+  string code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}
+
+message InitRequest {
+  string plugin_instance_id = 1;
+  string environment = 2;
+  map<string, string> config = 3;
+}
+
+message InitSuccess {
+  string plugin_name = 1;
+  string plugin_version = 2;
+}
+
+message InitResponse {
+  oneof outcome {
+    InitSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+message GetPriceRequest {
+  string asset = 1;
+  string amount = 2;
+}
+
+message GetPriceSuccess {
+  string price = 1;
+  string currency = 2;
+  string expires_at = 3;
+}
+
+message GetPriceResponse {
+  oneof outcome {
+    GetPriceSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+service QuotePluginService {
+  rpc Init(InitRequest) returns (InitResponse);
+  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);
+}

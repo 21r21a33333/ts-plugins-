@@ -1,6 +1,7 @@
 #![cfg(unix)]
 
 use std::{
+    fs,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     thread,
@@ -96,7 +97,8 @@ fn spawn_quote_plugin_process(workspace_root: &Path, socket_path: &Path) -> Chil
         .env("BALANCE_PLUGIN_SOCKET_PATH", socket_path)
         .env(
             "BALANCE_PLUGIN_MANIFEST_JSON",
-            r#"{"id":"quote-plugin","version":"0.1.0"}"#,
+            fs::read_to_string(workspace_root.join("examples/quote-plugin/plugin.json"))
+                .expect("quote plugin manifest should be readable"),
         )
         .env("BALANCE_PLUGIN_ENTRYPOINT", plugin_entry)
         .env("BALANCE_PLUGIN_DESCRIPTOR_PATH", descriptor_path)

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   RuntimeMetrics,
   bootstrapPluginRuntime,
+  createPluginContext,
   createStructuredLogger,
   definePlugin,
   extractTraceContext,
@@ -110,5 +111,74 @@ describe("runtime observability", () => {
     expect(metrics.currentQueueDepth("quote-plugin")).toBe(4);
     expect(metrics.restartCount("quote-plugin")).toBe(1);
     expect(metrics.breakerTransitionCount("quote-plugin", "closed_to_open")).toBe(1);
+  });
+
+  it("manifest observability flags gate log and trace emission", () => {
+    const quietLogEvents: LogEvent[] = [];
+    const quietTraceEvents: TraceEvent[] = [];
+    const loudLogEvents: LogEvent[] = [];
+    const loudTraceEvents: TraceEvent[] = [];
+
+    const service = {
+      packageName: "balance.plugins.quote.v1",
+      serviceName: "QuotePluginService",
+      typeName: "balance.plugins.quote.v1.QuotePluginService",
+      methods: [
+        {
+          name: "GetPrice",
+          localName: "getPrice",
+          canonicalName: "balance.plugins.quote.v1.QuotePluginService/GetPrice",
+          methodId: 202,
+          inputType: "GetPriceRequest",
+          outputType: "GetPriceResponse",
+        },
+      ],
+    };
+    const method = service.methods[0]!;
+
+    const quietContext = createPluginContext({
+      manifest: {
+        id: "quote-plugin",
+        version: "1.0.0",
+        observability: {
+          emitLogs: false,
+          emitTraces: false,
+        },
+      },
+      service,
+      method,
+      requestId: "req-quiet",
+      runtimeInstanceId: "runtime-1",
+      config: {},
+      logSink: (event) => quietLogEvents.push(event),
+      traceSink: (event) => quietTraceEvents.push(event),
+    });
+    quietContext.logger.info("suppressed");
+    quietContext.tracer.startSpan("suppressed").end();
+
+    const loudContext = createPluginContext({
+      manifest: {
+        id: "quote-plugin",
+        version: "1.0.0",
+        observability: {
+          emitLogs: true,
+          emitTraces: true,
+        },
+      },
+      service,
+      method,
+      requestId: "req-loud",
+      runtimeInstanceId: "runtime-1",
+      config: {},
+      logSink: (event) => loudLogEvents.push(event),
+      traceSink: (event) => loudTraceEvents.push(event),
+    });
+    loudContext.logger.info("emitted");
+    loudContext.tracer.startSpan("emitted").end();
+
+    expect(quietLogEvents).toHaveLength(0);
+    expect(quietTraceEvents).toHaveLength(0);
+    expect(loudLogEvents).toHaveLength(1);
+    expect(loudTraceEvents).toHaveLength(1);
   });
 });
