@@ -8,6 +8,8 @@ mod health;
 mod registry;
 mod runtime_handle;
 mod supervisor;
+#[cfg(unix)]
+mod unix_socket;
 
 pub use activation::{ActivationError, ActivationManager, Clock, MockClock};
 pub use circuit_breaker::{CircuitBreaker, CircuitBreakerConfig, CircuitBreakerState};
@@ -23,3 +25,5 @@ pub use supervisor::{
     RuntimeSupervisor, SupervisorError, SupervisorProcessFactory, SupervisorRuntime,
     TokioProcessFactory,
 };
+#[cfg(unix)]
+pub use unix_socket::UnixSocketTransport;
