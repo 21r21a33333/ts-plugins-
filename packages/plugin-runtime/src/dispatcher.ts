@@ -6,6 +6,7 @@ import {
   type PluginRuntimeManifest,
 } from "./context.js";
 import type { PluginHandlerMap } from "./define-plugin.js";
+import { executePluginHandler } from "./errors.js";
 
 export interface PluginDispatcher {
   initialize(request: unknown): Promise<unknown>;
@@ -84,7 +85,12 @@ export function createPluginDispatcher(
       config: configSnapshot,
     });
 
-    return handler(request, context);
+    return executePluginHandler({
+      handler,
+      request,
+      context,
+      method,
+    });
   }
 }
 
