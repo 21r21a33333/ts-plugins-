@@ -5,6 +5,8 @@
   "type": "module",
   "dependencies": {
     "@balance/plugin-codegen": "workspace:*",
+    "pacote": "^21.0.3",
+    "tar": "^7.5.1",
     "zod": "^4.1.12"
   },
   "scripts": {
