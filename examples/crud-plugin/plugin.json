@@ -1,0 +1,15 @@
+{
+  "id": "crud-plugin",
+  "version": "0.1.0",
+  "main": "./dist/src/index.js",
+  "contract": {
+    "service": "balance.plugins.crud.v1.CrudPluginService",
+    "descriptorSet": "./descriptors/contracts.binpb"
+  },
+  "activation": {
+    "mode": "lazy"
+  },
+  "concurrency": {
+    "mode": "serial"
+  }
+}

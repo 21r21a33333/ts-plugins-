@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 
 import type { PluginServiceDefinition } from "@balance/plugin-codegen";
+import type { RuntimeKvConfig } from "./kv.js";
 
 import { startPluginSocketRuntimeServer } from "./socket-server.js";
 
@@ -11,6 +12,7 @@ interface RuntimeProcessEnvironment {
     id: string;
     version: string;
   };
+  kvConfig?: RuntimeKvConfig;
   serviceModulePath: string;
   serviceExportName: string;
 }
@@ -25,6 +27,7 @@ const server = await startPluginSocketRuntimeServer({
   entrypointPath: runtimeEnvironment.entrypointPath,
   manifest: runtimeEnvironment.manifest,
   service,
+  kvConfig: runtimeEnvironment.kvConfig,
 });
 
 let closing = false;
@@ -63,11 +66,15 @@ function readRuntimeProcessEnvironment(
   const manifest = JSON.parse(
     requireEnv(env, "BALANCE_PLUGIN_MANIFEST_JSON"),
   ) as RuntimeProcessEnvironment["manifest"];
+  const kvConfig = env.BALANCE_PLUGIN_KV_JSON === undefined
+    ? undefined
+    : JSON.parse(env.BALANCE_PLUGIN_KV_JSON) as RuntimeKvConfig;
 
   return {
     socketPath,
     entrypointPath,
     manifest,
+    kvConfig,
     serviceModulePath,
     serviceExportName,
   };

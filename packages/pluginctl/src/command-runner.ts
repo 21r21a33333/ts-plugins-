@@ -1,11 +1,10 @@
 import { execFile } from "node:child_process";
 import { access } from "node:fs/promises";
 import { promisify } from "node:util";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const execFileAsync = promisify(execFile);
-const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const binRoot = join(repoRoot, "node_modules", ".bin");
 
@@ -15,9 +14,9 @@ export async function runTool(
   options: { cwd: string },
 ): Promise<void> {
   const binaryPath = join(binRoot, command);
-  await ensurePathExists(binaryPath, `Required tool ${command} was not found at ${binaryPath}`);
+  const resolvedBinary = await resolveBinary(command, binaryPath);
 
-  await execFileAsync(binaryPath, args, {
+  await execFileAsync(resolvedBinary, args, {
     cwd: options.cwd,
     env: {
       ...process.env,
@@ -27,10 +26,11 @@ export async function runTool(
   });
 }
 
-async function ensurePathExists(path: string, errorMessage: string): Promise<void> {
+async function resolveBinary(command: string, localPath: string): Promise<string> {
   try {
-    await access(path);
+    await access(localPath);
+    return localPath;
   } catch {
-    throw new Error(errorMessage);
+    return command;
   }
 }

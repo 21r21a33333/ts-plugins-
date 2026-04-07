@@ -4,6 +4,7 @@ import { buildPlugin } from "./build.js";
 import { generatePluginBindings } from "./generate.js";
 import { installPlugin } from "./install.js";
 import { packPlugin } from "./pack.js";
+import { testPlugin } from "./test.js";
 import { validatePluginManifest } from "./validate-manifest.js";
 
 export interface CliIo {
@@ -83,6 +84,13 @@ export function createCli(io: CliIo = {}) {
           2,
         )}\n`,
       );
+    });
+
+  cli
+    .command("test <projectDir>", "Run the plugin project's test command")
+    .action(async (projectDir: string) => {
+      const tested = await testPlugin({ projectDir });
+      stdout.write(`${JSON.stringify(tested, null, 2)}\n`);
     });
 
   cli

@@ -1,0 +1,15 @@
+{
+  "id": "http-plugin",
+  "version": "0.1.0",
+  "main": "./dist/src/index.js",
+  "contract": {
+    "service": "balance.plugins.http.v1.HttpPluginService",
+    "descriptorSet": "./descriptors/contracts.binpb"
+  },
+  "activation": {
+    "mode": "lazy"
+  },
+  "concurrency": {
+    "mode": "parallel-safe"
+  }
+}

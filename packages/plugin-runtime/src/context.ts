@@ -64,6 +64,7 @@ export interface PluginContextFactoryInput {
   requestId: string;
   runtimeInstanceId: string;
   config: Readonly<Record<string, string>>;
+  kv?: PluginKv;
   traceContext?: RuntimeTraceContext;
   logSink?: (event: LogEvent) => void;
   traceSink?: (event: TraceEvent) => void;
@@ -92,7 +93,7 @@ export function createPluginContext(input: PluginContextFactoryInput): PluginCon
       traceContext,
       sink: input.traceSink,
     }),
-    kv: createNoopKv(),
+    kv: input.kv ?? createNoopKv(),
     config: input.config,
     plugin: {
       id: input.manifest.id,

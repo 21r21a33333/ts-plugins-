@@ -1,0 +1,15 @@
+{
+  "id": "calculation-plugin",
+  "version": "0.1.0",
+  "main": "./dist/src/index.js",
+  "contract": {
+    "service": "balance.plugins.calc.v1.CalcPluginService",
+    "descriptorSet": "./descriptors/contracts.binpb"
+  },
+  "activation": {
+    "mode": "lazy"
+  },
+  "concurrency": {
+    "mode": "serial"
+  }
+}

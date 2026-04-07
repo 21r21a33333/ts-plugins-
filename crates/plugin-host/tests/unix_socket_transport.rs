@@ -14,6 +14,7 @@ use plugin_host::{DynamicMethod, PluginHost, UnixSocketTransport};
 use plugin_protocol::{decode_envelope, encode_envelope, ProtocolMessage};
 use prost::Message;
 
+#[allow(dead_code)]
 mod quote_v1 {
     include!(concat!(
         env!("CARGO_MANIFEST_DIR"),

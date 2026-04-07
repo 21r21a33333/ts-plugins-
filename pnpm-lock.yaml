@@ -18,6 +18,60 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  examples/calculation-plugin:
+    dependencies:
+      '@balance/plugin-generated':
+        specifier: workspace:*
+        version: link:../../packages/plugin-generated
+      '@balance/plugin-runtime':
+        specifier: workspace:*
+        version: link:../../packages/plugin-runtime
+      '@bufbuild/protobuf':
+        specifier: ^2.11.0
+        version: 2.11.0
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  examples/crud-plugin:
+    dependencies:
+      '@balance/plugin-generated':
+        specifier: workspace:*
+        version: link:../../packages/plugin-generated
+      '@balance/plugin-runtime':
+        specifier: workspace:*
+        version: link:../../packages/plugin-runtime
+      '@bufbuild/protobuf':
+        specifier: ^2.11.0
+        version: 2.11.0
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.0
+        version: 24.12.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  examples/http-plugin:
+    dependencies:
+      '@balance/plugin-generated':
+        specifier: workspace:*
+        version: link:../../packages/plugin-generated
+      '@balance/plugin-runtime':
+        specifier: workspace:*
+        version: link:../../packages/plugin-runtime
+      '@bufbuild/protobuf':
+        specifier: ^2.11.0
+        version: 2.11.0
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.0
+        version: 24.12.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   examples/quote-plugin:
     dependencies:
       '@balance/plugin-generated':

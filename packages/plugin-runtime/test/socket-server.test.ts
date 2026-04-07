@@ -273,6 +273,137 @@ describe("startPluginSocketRuntimeServer", () => {
     socket.destroy();
     await server.close();
   });
+
+  it("injects the configured host-managed kv store into plugin handlers", async () => {
+    const tempDir = await mkdtemp(join(os.tmpdir(), "plugin-runtime-socket-"));
+    tempDirs.push(tempDir);
+    const socketPath = join(tempDir, "plugin.sock");
+
+    const server = await startPluginSocketRuntimeServer({
+      socketPath,
+      manifest: { id: "quote-plugin", version: "1.0.0" },
+      service: runtimeService,
+      kvConfig: {
+        backend: { kind: "memory" },
+        namespacePrefix: "balance:test:quote-plugin",
+      },
+      loadModule: async () => ({
+        default: definePlugin({
+          async init(_req, ctx) {
+            await ctx.kv.set("quote_count", 0);
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  pluginName: "quote-plugin",
+                  pluginVersion: "1.0.0",
+                },
+              },
+            };
+          },
+          async getPrice(_req, ctx) {
+            const nextCount = ((await ctx.kv.get<number>("quote_count")) ?? 0) + 1;
+            await ctx.kv.set("quote_count", nextCount);
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  price: String(nextCount),
+                  currency: "USD",
+                  expiresAt: "2030-01-01T00:00:00Z",
+                },
+              },
+            };
+          },
+        }),
+      }),
+    });
+
+    const socket = await connect(socketPath);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 1n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 2026714057,
+            payload: toBinary(
+              InitRequestSchema,
+              create(InitRequestSchema, {
+                pluginInstanceId: "quote-plugin",
+                environment: "test",
+                config: {},
+              }),
+            ),
+          },
+        },
+      }),
+    );
+    await readEnvelope(socket);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 2n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 758358830,
+            payload: toBinary(
+              GetPriceRequestSchema,
+              create(GetPriceRequestSchema, {
+                asset: "BTC",
+                amount: "0.5",
+              }),
+            ),
+          },
+        },
+      }),
+    );
+    const first = await readEnvelope(socket);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 3n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 758358830,
+            payload: toBinary(
+              GetPriceRequestSchema,
+              create(GetPriceRequestSchema, {
+                asset: "BTC",
+                amount: "0.5",
+              }),
+            ),
+          },
+        },
+      }),
+    );
+    const second = await readEnvelope(socket);
+
+    if (first.body.case !== "rpcResponse" || second.body.case !== "rpcResponse") {
+      throw new Error("expected rpc responses for kv-backed requests");
+    }
+
+    const firstQuote = fromBinary(GetPriceResponseSchema, first.body.value.payload);
+    const secondQuote = fromBinary(GetPriceResponseSchema, second.body.value.payload);
+    if (firstQuote.outcome.case !== "ok" || secondQuote.outcome.case !== "ok") {
+      throw new Error("expected ok quote outcomes");
+    }
+
+    expect(firstQuote.outcome.value.price).toBe("1");
+    expect(secondQuote.outcome.value.price).toBe("2");
+
+    socket.destroy();
+    await server.close();
+  });
 });
 
 async function connect(socketPath: string): Promise<net.Socket> {

@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package balance.plugins.http.v1;
+
+message PluginError {
+  string code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}
+
+message InitRequest {
+  string plugin_instance_id = 1;
+  string environment = 2;
+  map<string, string> config = 3;
+}
+
+message InitSuccess {
+  string plugin_name = 1;
+  string plugin_version = 2;
+}
+
+message InitResponse {
+  oneof outcome {
+    InitSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+message FetchTodoRequest {
+  string url = 1;
+}
+
+message FetchTodoSuccess {
+  uint32 status = 1;
+  string title = 2;
+  string body = 3;
+}
+
+message FetchTodoResponse {
+  oneof outcome {
+    FetchTodoSuccess ok = 1;
+    PluginError error = 2;
+  }
+}
+
+service HttpPluginService {
+  rpc Init(InitRequest) returns (InitResponse);
+  rpc FetchTodo(FetchTodoRequest) returns (FetchTodoResponse);
+}

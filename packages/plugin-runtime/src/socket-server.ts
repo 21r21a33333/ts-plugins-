@@ -13,6 +13,13 @@ import {
 } from "@balance/plugin-generated/generated/balance/runtime/v1/plugin_protocol_pb";
 
 import { bootstrapPluginRuntime, type BootstrapPluginRuntimeInput } from "./bootstrap.js";
+import { createPluginContext } from "./context.js";
+import {
+  createMemoryKvBackend,
+  createPluginKvStore,
+  type MemoryKvBackend,
+  type RuntimeKvConfig,
+} from "./kv.js";
 import {
   createControlEnvelope,
   createFrameworkErrorEnvelope,
@@ -38,6 +45,8 @@ export interface StartPluginSocketRuntimeServerInput
   extends Omit<BootstrapPluginRuntimeInput, "service"> {
   socketPath: string;
   service: PluginServiceDefinition;
+  kvConfig?: RuntimeKvConfig;
+  memoryKvBackend?: MemoryKvBackend;
 }
 
 export interface PluginSocketRuntimeServer {
@@ -48,9 +57,23 @@ export async function startPluginSocketRuntimeServer(
   input: StartPluginSocketRuntimeServerInput,
 ): Promise<PluginSocketRuntimeServer> {
   const service = assertSchemaAwareService(input.service);
+  const kvStore =
+    input.kvConfig === undefined
+      ? undefined
+      : createPluginKvStore(input.kvConfig, {
+        memoryBackend: input.memoryKvBackend ?? createMemoryKvBackend(),
+      });
   const runtime = await bootstrapPluginRuntime({
     ...input,
     service,
+    contextFactory: (contextInput) =>
+      input.contextFactory?.({
+        ...contextInput,
+        kv: kvStore,
+      }) ?? createPluginContext({
+        ...contextInput,
+        kv: kvStore,
+      }),
   });
   const methodsById = new Map(
     service.methods.map((method) => [method.methodId, method] as const),
@@ -187,6 +210,7 @@ export async function startPluginSocketRuntimeServer(
       await new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));
       });
+      await kvStore?.disconnect();
       await rm(input.socketPath, { force: true });
     },
   };

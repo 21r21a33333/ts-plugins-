@@ -104,6 +104,9 @@ describe("pluginctl cli", () => {
           version: "1.0.0",
           private: true,
           type: "module",
+          scripts: {
+            test: "node --eval \"console.log('plugin tests passed')\"",
+          },
         },
         null,
         2,
@@ -395,5 +398,30 @@ describe("pluginctl cli", () => {
         }
       ).runCli(["build", fixture.rootDir]),
     ).rejects.toThrow(/main/i);
+  });
+
+  it("runs the plugin project's tests through the cli", async () => {
+    const fixture = await createAuthoringFixture();
+    const output: string[] = [];
+
+    await (
+      pluginctl as {
+        runCli: (
+          argv: string[],
+          options?: { stdout?: { write: (value: string) => void } },
+        ) => Promise<void>;
+      }
+    ).runCli(["test", fixture.rootDir], {
+      stdout: {
+        write(value: string) {
+          output.push(value);
+        },
+      },
+    });
+
+    expect(JSON.parse(output.join(""))).toEqual({
+      projectDir: fixture.rootDir,
+      status: "ok",
+    });
   });
 });
