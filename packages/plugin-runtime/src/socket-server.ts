@@ -82,6 +82,7 @@ export interface PluginSocketWorkerPool {
 export interface PluginSocketWorkerPoolOptions {
   workerFile: string;
   concurrency: PluginConcurrencyMode;
+  idleTimeoutMs?: number;
 }
 
 export async function startPluginSocketRuntimeServer(
@@ -330,6 +331,7 @@ function createWorkerPoolIfNeeded(
     return input.createWorkerPool({
       workerFile: new URL("./request-worker.js", import.meta.url).pathname,
       concurrency: normalizeConcurrency(concurrency),
+      idleTimeoutMs: input.manifest.runtime?.idleEvictionMs,
     });
   }
 
@@ -340,6 +342,7 @@ function createWorkerPoolIfNeeded(
   return new PluginWorkerPool<PluginSocketWorkerPoolTask, unknown>({
     workerFile: new URL("./request-worker.js", import.meta.url).pathname,
     concurrency: normalizeConcurrency(concurrency),
+    idleTimeoutMs: input.manifest.runtime?.idleEvictionMs,
   });
 }
 

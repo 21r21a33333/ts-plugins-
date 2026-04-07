@@ -615,6 +615,84 @@ describe("startPluginSocketRuntimeServer", () => {
 
     await server.close();
   });
+
+  it("forwards idle eviction settings into worker-pool creation", async () => {
+    const tempDir = await mkdtemp(join(os.tmpdir(), "plugin-runtime-socket-"));
+    tempDirs.push(tempDir);
+    const socketPath = join(tempDir, "plugin.sock");
+    const seenOptions: unknown[] = [];
+
+    const server = await startPluginSocketRuntimeServer({
+      socketPath,
+      entrypointPath: new URL("./fixtures/fake-plugin.mjs", import.meta.url).pathname,
+      manifest: {
+        id: "quote-plugin",
+        version: "1.0.0",
+        runtime: {
+          concurrency: {
+            mode: "parallel-safe",
+          },
+          idleEvictionMs: 12_345,
+        },
+      },
+      service: runtimeService,
+      loadModule: async () => ({
+        default: definePlugin({
+          async init() {
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  pluginName: "quote-plugin",
+                  pluginVersion: "1.0.0",
+                },
+              },
+            };
+          },
+          async getPrice() {
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  price: "worker",
+                  currency: "USD",
+                  expiresAt: "2030-01-01T00:00:00Z",
+                },
+              },
+            };
+          },
+        }),
+      }),
+      createWorkerPool: (options) => {
+        seenOptions.push(options);
+        return {
+          async run() {
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  price: "worker",
+                  currency: "USD",
+                  expiresAt: "2030-01-01T00:00:00Z",
+                },
+              },
+            };
+          },
+          queueSize() {
+            return 0;
+          },
+          async destroy() {},
+        };
+      },
+    });
+
+    expect(seenOptions).toHaveLength(1);
+    expect(seenOptions[0]).toMatchObject({
+      idleTimeoutMs: 12_345,
+    });
+
+    await server.close();
+  });
 });
 
 async function connect(socketPath: string): Promise<net.Socket> {
