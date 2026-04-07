@@ -1,6 +1,9 @@
 use bytes::Bytes;
+use opentelemetry::trace::TracerProvider;
 use plugin_host::{DynamicMethod, PluginHost, PluginHostError, PluginTransport};
 use plugin_protocol::ProtocolMessage;
+use tracing::subscriber::with_default;
+use tracing_subscriber::{layer::SubscriberExt, Registry};
 
 mod quote_v1 {
     include!(concat!(
@@ -40,8 +43,13 @@ fn typed_call_serializes_the_expected_method_id() {
 
         let sent = transport.last_sent().expect("request should be recorded");
     match sent {
-        ProtocolMessage::RpcRequest { method_id, .. } => {
+        ProtocolMessage::RpcRequest {
+            method_id,
+            trace_context,
+            ..
+        } => {
             assert_eq!(method_id, 2_026_714_057);
+            assert!(trace_context.is_none());
         }
         other => panic!("expected rpc request, got {other:?}"),
     }
@@ -123,6 +131,59 @@ fn typed_domain_errors_return_cleanly() {
         response.outcome,
         Some(quote_v1::get_price_response::Outcome::Error(_))
     ));
+}
+
+#[test]
+fn typed_call_propagates_the_current_trace_context() {
+    let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder().build();
+    let tracer = provider.tracer("plugin-host-tests");
+    let subscriber = Registry::default().with(
+        tracing_opentelemetry::layer().with_tracer(tracer),
+    );
+
+    with_default(subscriber, || {
+        let span = tracing::info_span!("plugin_request");
+        let _entered = span.enter();
+
+        let transport = RecordingTransport::respond_with(ProtocolMessage::RpcResponse {
+            request_id: 1,
+            payload: encode(&quote_v1::GetPriceResponse {
+                outcome: Some(quote_v1::get_price_response::Outcome::Ok(
+                    quote_v1::GetPriceSuccess {
+                        price: "42.00".into(),
+                        currency: "USD".into(),
+                        expires_at: "2026-04-07T00:00:00Z".into(),
+                    },
+                )),
+            }),
+            trace_context: None,
+        });
+        let mut host = PluginHost::new(transport.clone());
+
+        let _: quote_v1::GetPriceResponse = host
+            .invoke(
+                DynamicMethod::from_canonical_name(
+                    "balance.plugins.quote.v1.QuotePluginService/GetPrice",
+                ),
+                &quote_v1::GetPriceRequest {
+                    asset: "BTC".into(),
+                    amount: "3".into(),
+                },
+            )
+            .expect("trace-enabled call should decode");
+
+        let sent = transport.last_sent().expect("request should be recorded");
+        match sent {
+            ProtocolMessage::RpcRequest {
+                trace_context: Some(trace_context),
+                ..
+            } => {
+                assert_eq!(trace_context.trace_id.len(), 32);
+                assert_eq!(trace_context.span_id.len(), 16);
+            }
+            other => panic!("expected rpc request with trace context, got {other:?}"),
+        }
+    });
 }
 
 #[derive(Debug, Clone)]

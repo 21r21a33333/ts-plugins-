@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use plugin_observability::current_trace_context;
 use plugin_protocol::{FrameworkError, ProtocolMessage};
 use prost::Message;
 
@@ -43,7 +44,7 @@ where
             request_id,
             method_id: method.method_id(),
             payload,
-            trace_context: None,
+            trace_context: current_trace_context(),
         })?;
 
         match response {

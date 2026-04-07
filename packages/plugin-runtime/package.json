@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@balance/plugin-codegen": "workspace:*",
+    "@opentelemetry/api": "^1.9.0",
     "ioredis": "^5.8.2",
     "piscina": "^5.1.3"
   },

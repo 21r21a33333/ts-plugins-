@@ -8,6 +8,19 @@ export { definePlugin, type PluginHandler, type PluginHandlerMap } from "./defin
 export { createPluginDispatcher, type PluginDispatcher } from "./dispatcher.js";
 export { executePluginHandler, PluginExecutionError } from "./errors.js";
 export {
+  createStructuredLogger,
+  type LogEvent,
+  type StructuredLogger,
+  type StructuredLoggerOptions,
+} from "./logger.js";
+export { RuntimeMetrics, type MetricOutcome } from "./metrics.js";
+export {
+  createPluginTracer,
+  extractTraceContext,
+  type RuntimeTraceContext,
+  type TraceEvent,
+} from "./tracing.js";
+export {
   createMemoryKvBackend,
   createPluginKvStore,
   MemoryKvBackend,

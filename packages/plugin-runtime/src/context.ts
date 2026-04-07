@@ -1,5 +1,13 @@
 import type { PluginMethodDefinition, PluginServiceDefinition } from "@balance/plugin-codegen";
 
+import { createStructuredLogger, type LogEvent } from "./logger.js";
+import {
+  createPluginTracer,
+  extractTraceContext,
+  type RuntimeTraceContext,
+  type TraceEvent,
+} from "./tracing.js";
+
 export interface PluginLogger {
   info(message: string, attributes?: Record<string, unknown>): void;
   warn(message: string, attributes?: Record<string, unknown>): void;
@@ -37,6 +45,7 @@ export interface PluginContext {
   plugin: {
     id: string;
     version: string;
+    runtimeInstanceId: string;
     service: PluginServiceDefinition["typeName"];
   };
   request: {
@@ -44,6 +53,7 @@ export interface PluginContext {
     methodId: number;
     methodName: string;
     canonicalName: string;
+    traceId: string | null;
   };
 }
 
@@ -52,7 +62,11 @@ export interface PluginContextFactoryInput {
   service: PluginServiceDefinition;
   method: PluginMethodDefinition;
   requestId: string;
+  runtimeInstanceId: string;
   config: Readonly<Record<string, string>>;
+  traceContext?: RuntimeTraceContext;
+  logSink?: (event: LogEvent) => void;
+  traceSink?: (event: TraceEvent) => void;
 }
 
 export interface PluginRuntimeManifest {
@@ -65,14 +79,25 @@ export interface PluginContextFactory {
 }
 
 export function createPluginContext(input: PluginContextFactoryInput): PluginContext {
+  const traceContext = extractTraceContext(input.traceContext) ?? undefined;
   return {
-    logger: createNoopLogger(),
-    tracer: createNoopTracer(),
+    logger: createStructuredLogger({
+      pluginId: input.manifest.id,
+      runtimeInstanceId: input.runtimeInstanceId,
+      requestId: input.requestId,
+      traceId: traceContext?.traceId ?? null,
+      sink: input.logSink,
+    }),
+    tracer: createPluginTracer({
+      traceContext,
+      sink: input.traceSink,
+    }),
     kv: createNoopKv(),
     config: input.config,
     plugin: {
       id: input.manifest.id,
       version: input.manifest.version,
+      runtimeInstanceId: input.runtimeInstanceId,
       service: input.service.typeName,
     },
     request: {
@@ -80,25 +105,7 @@ export function createPluginContext(input: PluginContextFactoryInput): PluginCon
       methodId: input.method.methodId,
       methodName: input.method.name,
       canonicalName: input.method.canonicalName,
-    },
-  };
-}
-
-function createNoopLogger(): PluginLogger {
-  return {
-    info() {},
-    warn() {},
-    error() {},
-  };
-}
-
-function createNoopTracer(): PluginTracer {
-  return {
-    startSpan() {
-      return {
-        setAttribute() {},
-        end() {},
-      };
+      traceId: traceContext?.traceId ?? null,
     },
   };
 }

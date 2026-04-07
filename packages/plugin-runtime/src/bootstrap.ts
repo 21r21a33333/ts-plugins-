@@ -15,6 +15,7 @@ export interface BootstrapPluginRuntimeInput {
   entrypointPath?: string;
   loadModule?: () => Promise<unknown>;
   contextFactory?: PluginContextFactory;
+  runtimeInstanceId?: string;
 }
 
 export interface PluginRuntime extends PluginDispatcher {
@@ -33,6 +34,7 @@ export async function bootstrapPluginRuntime(
     service: input.service,
     handlers,
     contextFactory: input.contextFactory,
+    runtimeInstanceId: input.runtimeInstanceId,
   });
 
   return {

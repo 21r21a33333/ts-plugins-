@@ -7,10 +7,11 @@ import {
 } from "./context.js";
 import type { PluginHandlerMap } from "./define-plugin.js";
 import { executePluginHandler } from "./errors.js";
+import type { RuntimeTraceContext } from "./tracing.js";
 
 export interface PluginDispatcher {
-  initialize(request: unknown): Promise<unknown>;
-  invoke(methodId: number, request: unknown): Promise<unknown>;
+  initialize(request: unknown, options?: RequestDispatchOptions): Promise<unknown>;
+  invoke(methodId: number, request: unknown, options?: RequestDispatchOptions): Promise<unknown>;
   isInitialized(): boolean;
 }
 
@@ -19,6 +20,11 @@ export interface CreatePluginDispatcherInput {
   service: PluginServiceDefinition;
   handlers: PluginHandlerMap;
   contextFactory?: PluginContextFactory;
+  runtimeInstanceId?: string;
+}
+
+export interface RequestDispatchOptions {
+  traceContext?: RuntimeTraceContext;
 }
 
 export function createPluginDispatcher(
@@ -35,23 +41,28 @@ export function createPluginDispatcher(
   let initialized = false;
   let requestCounter = 0;
   let configSnapshot: Readonly<Record<string, string>> = Object.freeze({});
+  const runtimeInstanceId = input.runtimeInstanceId ?? `${input.manifest.id}-runtime`;
 
   return {
-    async initialize(request: unknown): Promise<unknown> {
-      const result = await invokeMethod(initMethod, request);
+    async initialize(request: unknown, options?: RequestDispatchOptions): Promise<unknown> {
+      const result = await invokeMethod(initMethod, request, options);
       initialized = true;
       configSnapshot = deriveConfigSnapshot(request);
       return result;
     },
 
-    async invoke(methodId: number, request: unknown): Promise<unknown> {
+    async invoke(
+      methodId: number,
+      request: unknown,
+      options?: RequestDispatchOptions,
+    ): Promise<unknown> {
       const method = methodsById.get(methodId);
       if (method === undefined) {
         throw new Error(`Unknown plugin method id: ${methodId}`);
       }
 
       if (method.name === "Init") {
-        return this.initialize(request);
+        return this.initialize(request, options);
       }
 
       if (!initialized) {
@@ -60,7 +71,7 @@ export function createPluginDispatcher(
         );
       }
 
-      return invokeMethod(method, request);
+      return invokeMethod(method, request, options);
     },
 
     isInitialized(): boolean {
@@ -68,7 +79,11 @@ export function createPluginDispatcher(
     },
   };
 
-  async function invokeMethod(method: PluginMethodDefinition, request: unknown): Promise<unknown> {
+  async function invokeMethod(
+    method: PluginMethodDefinition,
+    request: unknown,
+    options?: RequestDispatchOptions,
+  ): Promise<unknown> {
     const handler = input.handlers[method.localName];
     if (handler === undefined) {
       throw new Error(`Handler ${method.localName} is not implemented`);
@@ -82,7 +97,9 @@ export function createPluginDispatcher(
       service: input.service,
       method,
       requestId,
+      runtimeInstanceId,
       config: configSnapshot,
+      traceContext: options?.traceContext,
     });
 
     return executePluginHandler({
