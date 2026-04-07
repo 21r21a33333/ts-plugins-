@@ -1,3 +1,5 @@
+//! Redis-backed KV backend configuration for durable plugin state.
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,3 +1,7 @@
+/**
+ * Validates plugin protobuf contracts and normalizes them into codegen-friendly metadata.
+ */
+
 import type { DescMessage, DescMethod, DescService } from "@bufbuild/protobuf";
 
 import { canonicalMethodName, stableMethodId } from "./method-ids.js";
@@ -26,6 +30,9 @@ type MethodLike = Pick<
   "name" | "localName" | "methodKind" | "input" | "output"
 >;
 
+/**
+ * Validates the single-service v1 contract shape and derives metadata used by codegen and runtime loading.
+ */
 export function buildPluginServiceDefinition(
   services: readonly ServiceLike[],
 ): PluginServiceDefinition {
@@ -70,6 +77,7 @@ export function buildPluginServiceDefinition(
       ),
       inputType: method.input.typeName,
       outputType: method.output.typeName,
+      // v1 stays unary-only, so both sides can keep message schemas directly on the method metadata.
       inputSchema: method.input as DescMessage,
       outputSchema: method.output as DescMessage,
     })),

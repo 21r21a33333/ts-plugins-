@@ -1,3 +1,5 @@
+//! Structured logging helpers shared by host-side components.
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LogLevel {
     Info,

@@ -1,3 +1,7 @@
+/**
+ * Public entrypoint for descriptor loading and code generation helpers.
+ */
+
 export {
   assertUniqueMethodIds,
   canonicalMethodName,

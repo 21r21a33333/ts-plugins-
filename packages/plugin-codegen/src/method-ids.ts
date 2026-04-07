@@ -1,3 +1,7 @@
+/**
+ * Computes deterministic numeric method identifiers from canonical RPC names.
+ */
+
 export function canonicalMethodName(
   packageName: string,
   serviceName: string,

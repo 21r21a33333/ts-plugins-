@@ -1,3 +1,7 @@
+/**
+ * Demo plugin that performs outbound HTTP calls directly from the TypeScript runtime.
+ */
+
 import { definePlugin } from "@balance/plugin-runtime";
 
 import type { HttpPluginHandlers } from "../gen/plugin-handlers.js";

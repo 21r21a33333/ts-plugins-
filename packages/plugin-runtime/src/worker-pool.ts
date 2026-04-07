@@ -1,14 +1,24 @@
+/**
+ * Piscina-backed worker-pool wrapper with plugin-friendly concurrency policies.
+ */
+
 import { availableParallelism } from "node:os";
 
 import Piscina from "piscina";
 
 import type { MemoryPressureConfig, MemoryPressureState } from "./cache.js";
 
+/**
+ * Declares how aggressively a plugin may consume worker concurrency once activated.
+ */
 export type PluginConcurrencyMode =
   | { mode: "serial" }
   | { mode: "parallel-safe" }
   | { mode: "max_concurrency"; maxConcurrency: number };
 
+/**
+ * Raised when the runtime refuses to queue more work under hard memory pressure.
+ */
 export class WorkerPoolOverloadedError extends Error {
   constructor(message: string) {
     super(message);
@@ -27,6 +37,9 @@ export interface PluginWorkerPoolOptions {
   currentHeapUsageBytes?: () => number;
 }
 
+/**
+ * Thin wrapper around Piscina that enforces plugin-level concurrency and memory-pressure rules.
+ */
 export class PluginWorkerPool<TTask, TResult> {
   private readonly piscina: Piscina;
   private readonly taskTimeoutBufferMs: number;
@@ -52,6 +65,9 @@ export class PluginWorkerPool<TTask, TResult> {
     this.currentHeapUsageBytes = options.currentHeapUsageBytes;
   }
 
+  /**
+   * Runs a single task and optionally layers a host-visible timeout over the worker execution.
+   */
   async run(task: TTask, timeoutMs?: number): Promise<TResult> {
     const pressureState = this.memoryPressureState();
     if (pressureState === "hard") {
@@ -80,10 +96,16 @@ export class PluginWorkerPool<TTask, TResult> {
     await this.piscina.destroy();
   }
 
+  /**
+   * Reports the current queued task count so the host can expose backpressure signals.
+   */
   queueSize(): number {
     return this.piscina.queueSize;
   }
 
+  /**
+   * Maps the configured heap thresholds onto the current worker-runtime memory state.
+   */
   memoryPressureState(): MemoryPressureState {
     if (this.memoryPressure === undefined || this.currentHeapUsageBytes === undefined) {
       return "normal";

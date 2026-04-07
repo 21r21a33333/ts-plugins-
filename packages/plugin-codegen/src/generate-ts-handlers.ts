@@ -1,3 +1,7 @@
+/**
+ * Generates TypeScript handler interfaces and runtime metadata from a plugin contract.
+ */
+
 import type { PluginMethodDefinition, PluginServiceDefinition } from "./plugin-contract.js";
 
 export interface GenerateTsHandlersSourceInput {

@@ -1,3 +1,7 @@
+/**
+ * Thin module used as the worker_threads entrypoint for pooled plugin execution.
+ */
+
 const moduleCache = new Map<string, (task: unknown) => Promise<unknown> | unknown>();
 
 export interface WorkerTask {

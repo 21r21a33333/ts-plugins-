@@ -1,3 +1,7 @@
+/**
+ * Zod schema for the static `plugin.json` contract consumed by the CLI and host.
+ */
+
 import { z } from "zod";
 
 const activationSchema = z.object({

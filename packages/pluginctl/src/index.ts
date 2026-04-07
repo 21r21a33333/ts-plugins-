@@ -1,3 +1,7 @@
+/**
+ * Public entrypoint for the opinionated plugin authoring CLI and helper APIs.
+ */
+
 export {
   initPluginProject,
   type InitPluginInput,

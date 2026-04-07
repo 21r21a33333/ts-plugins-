@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+/**
+ * The opinionated command-line workflow for authoring, packaging, and installing plugins.
+ */
 
 import cac from "cac";
 import { pathToFileURL } from "node:url";
@@ -15,6 +18,9 @@ export interface CliIo {
   stdout?: { write: (value: string) => void };
 }
 
+/**
+ * Creates the top-level CLI command tree for plugin authoring workflows.
+ */
 export function createCli(io: CliIo = {}) {
   const stdout = io.stdout ?? process.stdout;
   const cli = cac("pluginctl");
@@ -189,6 +195,9 @@ function firstOptionValue(
   return value;
 }
 
+/**
+ * Strips descriptor-only fields before printing contract metadata to the terminal.
+ */
 function serializeContractForInspect(contract: {
   packageName: string;
   serviceName: string;

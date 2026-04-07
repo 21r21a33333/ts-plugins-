@@ -1,3 +1,7 @@
+/**
+ * Executes the plugin project's declared test command.
+ */
+
 import { resolve } from "node:path";
 
 import { runTool } from "./command-runner.js";

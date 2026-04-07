@@ -1,3 +1,7 @@
+/**
+ * Renders the opinionated starter workspace used by `pluginctl init`.
+ */
+
 const DEFAULT_VERSION = "0.1.0";
 const DEFAULT_PROTOC_GEN_ES_VERSION = "^2.9.0";
 const DEFAULT_BUF_VERSION = "^1.67.0";
@@ -14,17 +18,26 @@ export interface PluginTemplateInput {
   version?: string;
 }
 
+/**
+ * Single file emitted by the scaffold generator.
+ */
 export interface PluginTemplateFile {
   path: string;
   contents: string;
 }
 
+/**
+ * Complete scaffold result returned by the template renderer.
+ */
 export interface PluginTemplateOutput {
   files: PluginTemplateFile[];
   manifestPath: string;
   protoPath: string;
 }
 
+/**
+ * Produces the starter files for a new TypeScript plugin package.
+ */
 export function renderDefaultPluginTemplate(
   input: PluginTemplateInput,
 ): PluginTemplateOutput {

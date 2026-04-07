@@ -1,3 +1,7 @@
+/**
+ * Validates a plugin manifest against on-disk artifacts and the packaged descriptor set.
+ */
+
 import {
   buildPluginServiceDefinition,
   loadDescriptorRegistry,

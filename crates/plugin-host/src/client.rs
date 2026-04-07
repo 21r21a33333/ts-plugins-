@@ -1,3 +1,5 @@
+//! Typed Rust-side request execution over the framed plugin transport.
+
 use bytes::Bytes;
 use plugin_observability::current_trace_context;
 use plugin_protocol::{FrameworkError, ProtocolMessage};
@@ -5,17 +7,21 @@ use prost::Message;
 
 use crate::dynamic::DynamicMethod;
 
+/// Transport abstraction used by typed and dynamic host clients.
 pub trait PluginTransport {
+    /// Sends a single protocol message and waits for its response.
     fn send(&mut self, message: ProtocolMessage) -> Result<ProtocolMessage, PluginHostError>;
 }
 
 #[derive(Debug)]
+/// Typed host-side RPC caller over a transport implementation.
 pub struct PluginHost<TTransport> {
     transport: TTransport,
     next_request_id: u64,
 }
 
 impl<TTransport> PluginHost<TTransport> {
+    /// Creates a new host client over the provided transport.
     pub fn new(transport: TTransport) -> Self {
         Self {
             transport,
@@ -28,6 +34,7 @@ impl<TTransport> PluginHost<TTransport>
 where
     TTransport: PluginTransport,
 {
+    /// Invokes a typed plugin method and decodes the protobuf response payload.
     pub fn invoke<TRequest, TResponse>(
         &mut self,
         method: DynamicMethod,
@@ -88,6 +95,7 @@ where
     }
 }
 
+/// Errors raised while sending requests or decoding plugin responses.
 #[derive(Debug)]
 pub enum PluginHostError {
     Encode(String),

@@ -1,3 +1,5 @@
+//! Installed-plugin manifest parsing and in-memory registry state.
+
 use std::{
     collections::BTreeMap,
     fs,
@@ -10,12 +12,14 @@ use serde::Deserialize;
 use crate::circuit_breaker::CircuitBreakerState;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Controls when a plugin runtime is activated.
 pub enum ActivationMode {
     Lazy,
     Startup,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// Declares how a runtime may process concurrent requests.
 pub enum ConcurrencyMode {
     Serial,
     ParallelSafe,
@@ -23,6 +27,7 @@ pub enum ConcurrencyMode {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// Static observability defaults carried from the installed manifest.
 pub struct ObservabilityConfig {
     pub emit_logs: bool,
     pub emit_traces: bool,
@@ -40,6 +45,7 @@ impl Default for ObservabilityConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+/// Host-facing view of the installed `manifest.json` artifact.
 pub struct PluginManifest {
     pub id: String,
     pub version: String,
@@ -56,14 +62,17 @@ pub struct PluginManifest {
 }
 
 impl PluginManifest {
+    /// Creates a minimal lazy-activation manifest for tests and examples.
     pub fn lazy(id: &str) -> Self {
         Self::new_with_activation(id, ActivationMode::Lazy)
     }
 
+    /// Creates a minimal startup-activation manifest for tests and examples.
     pub fn startup(id: &str) -> Self {
         Self::new_with_activation(id, ActivationMode::Startup)
     }
 
+    /// Loads and normalizes a packaged `manifest.json` from an installed plugin directory.
     pub fn from_installed_path(
         installed_path: impl AsRef<Path>,
     ) -> Result<Self, PluginManifestLoadError> {
@@ -115,6 +124,7 @@ impl PluginManifest {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Runtime health state tracked by the registry.
 pub enum ActivationStatus {
     Inactive,
     Ready,
@@ -122,6 +132,7 @@ pub enum ActivationStatus {
 }
 
 #[derive(Debug)]
+/// Mutable registry entry for a single installed plugin.
 pub struct PluginRegistryEntry {
     pub manifest: PluginManifest,
     pub installed_path: PathBuf,
@@ -133,11 +144,13 @@ pub struct PluginRegistryEntry {
 }
 
 #[derive(Debug)]
+/// In-memory registry of installed plugins known to the host.
 pub struct PluginRegistry {
     entries: BTreeMap<String, PluginRegistryEntry>,
 }
 
 impl PluginRegistry {
+    /// Creates a registry from already-loaded manifest/path pairs.
     pub fn from_entries(
         entries: impl IntoIterator<Item = (PluginManifest, PathBuf)>,
     ) -> Self {
@@ -163,6 +176,7 @@ impl PluginRegistry {
         Self { entries }
     }
 
+    /// Creates a registry by loading `manifest.json` files from installed plugin directories.
     pub fn from_installed_paths(
         installed_paths: impl IntoIterator<Item = PathBuf>,
     ) -> Result<Self, PluginManifestLoadError> {
@@ -174,16 +188,19 @@ impl PluginRegistry {
         Ok(Self::from_entries(entries))
     }
 
+    /// Returns a mutable entry by plugin identifier.
     pub fn entry_mut(&mut self, plugin_id: &str) -> Option<&mut PluginRegistryEntry> {
         self.entries.get_mut(plugin_id)
     }
 
+    /// Returns the current activation status for a plugin, if present.
     pub fn status(&self, plugin_id: &str) -> Option<ActivationStatus> {
         self.entries
             .get(plugin_id)
             .map(|entry| entry.activation_status)
     }
 
+    /// Lists plugin identifiers that should be activated at host startup.
     pub fn startup_plugin_ids(&self) -> Vec<String> {
         self.entries
             .values()
@@ -192,10 +209,12 @@ impl PluginRegistry {
             .collect()
     }
 
+    /// Lists all registered plugin identifiers.
     pub fn plugin_ids(&self) -> Vec<String> {
         self.entries.keys().cloned().collect()
     }
 
+    /// Marks a plugin inactive without removing its registry entry.
     pub fn deactivate(&mut self, plugin_id: &str) -> bool {
         if let Some(entry) = self.entries.get_mut(plugin_id) {
             entry.activation_status = ActivationStatus::Inactive;
@@ -209,6 +228,7 @@ impl PluginRegistry {
 }
 
 #[derive(Debug)]
+/// Failures that can occur while loading installed manifests from disk.
 pub enum PluginManifestLoadError {
     Read {
         path: PathBuf,

@@ -1,3 +1,7 @@
+/**
+ * Demo plugin that returns deterministic quote data for end-to-end examples.
+ */
+
 import { definePlugin } from "@balance/plugin-runtime";
 
 import type { QuotePluginHandlers } from "../gen/plugin-handlers.js";

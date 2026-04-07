@@ -1,3 +1,10 @@
+/**
+ * Declares the handler object exported by a TypeScript plugin.
+ */
+
+/**
+ * Signature shared by generated plugin handler interfaces.
+ */
 export type PluginHandler<TRequest = unknown, TResponse = unknown> = (
   req: TRequest,
   ctx: import("./context.js").PluginContext,
@@ -16,6 +23,9 @@ type PluginHandlerSet<THandlers extends object> = {
     : never;
 };
 
+/**
+ * Wraps a typed handler map without adding runtime behavior so authoring stays ergonomic.
+ */
 export function definePlugin<THandlers extends object>(
   handlers: PluginHandlerSet<THandlers>,
 ): THandlers {

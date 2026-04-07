@@ -1,3 +1,7 @@
+/**
+ * Public entrypoint for test helpers and in-process runtime harnesses.
+ */
+
 export {
   createTestContextFactory,
   type CreateTestContextOptions,

@@ -1,3 +1,7 @@
+/**
+ * Demo plugin that performs simple arithmetic over the typed RPC boundary.
+ */
+
 import { definePlugin } from "@balance/plugin-runtime";
 
 import type { CalcPluginHandlers } from "../gen/plugin-handlers.js";

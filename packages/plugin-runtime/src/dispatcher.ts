@@ -1,3 +1,7 @@
+/**
+ * Dispatches validated RPC calls into plugin handlers after Init completes.
+ */
+
 import type { PluginMethodDefinition, PluginServiceDefinition } from "@balance/plugin-codegen";
 
 import {

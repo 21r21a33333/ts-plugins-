@@ -1,3 +1,5 @@
+//! Runtime process supervision, health tracking, and restart probing.
+
 use std::path::{Path, PathBuf};
 
 use tokio::process::{Child, Command};

@@ -1,3 +1,7 @@
+/**
+ * Public entrypoint for the runtime package.
+ */
+
 export {
   bootstrapPluginRuntime,
   type BootstrapPluginRuntimeInput,

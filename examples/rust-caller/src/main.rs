@@ -1,4 +1,5 @@
 #![cfg(unix)]
+//! Minimal Rust caller example that invokes a live plugin over the Unix socket transport.
 
 use std::{collections::BTreeMap, error::Error, path::PathBuf};
 
@@ -63,6 +64,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// CLI arguments required by the standalone Rust caller example.
 struct CliArgs {
     socket: PathBuf,
     asset: String,
@@ -71,6 +73,7 @@ struct CliArgs {
 }
 
 impl CliArgs {
+    /// Parses the minimal flag set used by the example without pulling in a full CLI framework.
     fn parse(
         args: impl IntoIterator<Item = String>,
     ) -> Result<Self, Box<dyn Error>> {

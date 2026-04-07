@@ -1,3 +1,7 @@
+/**
+ * Host-managed KV implementations for runtime-side plugin access.
+ */
+
 import { randomUUID } from "node:crypto";
 
 import IORedis from "ioredis/built/index.js";
@@ -7,6 +11,9 @@ const KEY_REGEX = /^[A-Za-z0-9:_-]{1,512}$/;
 const UNLOCK_SCRIPT =
   'if redis.call("GET", KEYS[1]) == ARGV[1] then return redis.call("UNLINK", KEYS[1]) else return 0 end';
 
+/**
+ * Runtime-facing KV contract exposed to plugins through `ctx.kv`.
+ */
 export interface PluginKvStore {
   get<T>(key: string): Promise<T | null>;
   set(key: string, value: unknown, opts?: { ttlSec?: number }): Promise<boolean>;
@@ -22,11 +29,17 @@ export interface PluginKvStore {
   disconnect(): Promise<void>;
 }
 
+/**
+ * Host-supplied KV configuration injected during runtime bootstrap.
+ */
 export interface RuntimeKvConfig {
   backend: { kind: "memory" } | { kind: "redis"; url: string };
   namespacePrefix: string;
 }
 
+/**
+ * Test/dev options for the in-memory KV backend.
+ */
 export interface MemoryKvBackendOptions {
   now?: () => number;
 }
@@ -41,6 +54,9 @@ interface MemoryLock {
   expiresAt: number;
 }
 
+/**
+ * Shared in-memory storage used by test harnesses and local runtime mode.
+ */
 export class MemoryKvBackend {
   readonly values = new Map<string, MemoryValue>();
   readonly locks = new Map<string, MemoryLock>();
@@ -51,10 +67,16 @@ export class MemoryKvBackend {
   }
 }
 
+/**
+ * Creates a reusable in-memory backend instance so multiple stores can share state in tests.
+ */
 export function createMemoryKvBackend(options: MemoryKvBackendOptions = {}): MemoryKvBackend {
   return new MemoryKvBackend(options);
 }
 
+/**
+ * Selects the concrete KV implementation requested by the host configuration.
+ */
 export function createPluginKvStore(
   config: RuntimeKvConfig,
   options: { memoryBackend?: MemoryKvBackend } = {},
@@ -184,6 +206,7 @@ export class MemoryPluginKvStore extends BasePluginKvStore implements PluginKvSt
       throw new Error("lock busy");
     }
 
+    // Locks are ephemeral and scoped by token so a stale finally block cannot release a new lock.
     this.backend.locks.set(lockKey, {
       token,
       expiresAt: this.backend.now() + ttlSec * 1000,
@@ -230,6 +253,9 @@ export class MemoryPluginKvStore extends BasePluginKvStore implements PluginKvSt
   }
 }
 
+/**
+ * Redis-backed KV store used for production durability across runtime restarts.
+ */
 export class RedisPluginKvStore extends BasePluginKvStore implements PluginKvStore {
   private readonly client: Redis;
 
@@ -351,6 +377,7 @@ export class RedisPluginKvStore extends BasePluginKvStore implements PluginKvSto
     try {
       return await fn();
     } finally {
+      // The Lua unlock script preserves lock ownership even if another worker acquired a later lock.
       await this.client.eval(UNLOCK_SCRIPT, 1, redisKey, token);
     }
   }

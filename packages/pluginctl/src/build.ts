@@ -1,3 +1,7 @@
+/**
+ * Compiles a plugin project and re-validates its packaged manifest inputs.
+ */
+
 import { resolve } from "node:path";
 
 import { runTool } from "./command-runner.js";

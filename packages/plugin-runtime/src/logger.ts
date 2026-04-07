@@ -1,3 +1,7 @@
+/**
+ * Structured log event shaping for request-scoped plugin logging.
+ */
+
 export interface LogEvent {
   level: "info" | "warn" | "error";
   message: string;

@@ -1,3 +1,7 @@
+/**
+ * Builds a reproducible tarball from a validated plugin project.
+ */
+
 import { access, cp, mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { tmpdir } from "node:os";

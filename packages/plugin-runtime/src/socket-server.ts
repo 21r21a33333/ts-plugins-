@@ -1,3 +1,7 @@
+/**
+ * Runs the Node-side socket server that bridges framed protobuf requests into typed handlers.
+ */
+
 import net from "node:net";
 import { rm } from "node:fs/promises";
 import type { DescMessage } from "@bufbuild/protobuf";
@@ -87,6 +91,9 @@ export interface PluginSocketWorkerPoolOptions {
   idleTimeoutMs?: number;
 }
 
+/**
+ * Starts the long-lived plugin socket server used by the Rust host transport.
+ */
 export async function startPluginSocketRuntimeServer(
   input: StartPluginSocketRuntimeServerInput,
 ): Promise<PluginSocketRuntimeServer> {
@@ -154,7 +161,12 @@ export async function startPluginSocketRuntimeServer(
 
       switch (envelope.body.case) {
         case "rpcRequest":
-          return await handleRpcRequest(envelope.requestId, envelope.body.value.methodId, envelope.body.value.payload, envelope.traceContext);
+          return await handleRpcRequest(
+            envelope.requestId,
+            envelope.body.value.methodId,
+            envelope.body.value.payload,
+            envelope.traceContext,
+          );
         case "control":
           if (envelope.body.value.kind === ControlMessageKind.PING) {
             return createControlEnvelope({
@@ -229,6 +241,7 @@ export async function startPluginSocketRuntimeServer(
             : method.name === "Init"
               ? runtime.initialize(request, { traceContext })
               : runtime.invoke(methodId, request, { traceContext });
+        // The runtime timeout is enforced in one place so direct and worker-pool dispatch behave identically.
         const result = await withTimeout(
           invocation,
           timeoutMs,
@@ -256,6 +269,7 @@ export async function startPluginSocketRuntimeServer(
           error instanceof PluginExecutionError
             ? FrameworkErrorCode.UNKNOWN
             : FrameworkErrorCode.DECODE_FAILED;
+        // Typed business errors are counted separately, but framework faults always land here.
         metrics?.recordRequest(
           input.manifest.id,
           method.name,

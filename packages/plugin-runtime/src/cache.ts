@@ -1,3 +1,7 @@
+/**
+ * Warm-cache helpers and memory-pressure handling for long-lived runtimes.
+ */
+
 export interface MemoryPressureConfig {
   softLimitBytes: number;
   hardLimitBytes: number;

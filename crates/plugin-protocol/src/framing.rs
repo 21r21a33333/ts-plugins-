@@ -1,3 +1,5 @@
+//! Length-delimited framing for protocol envelopes on socket transports.
+
 use bytes::BytesMut;
 use tokio_util::codec::{Decoder, Encoder, LengthDelimitedCodec};
 

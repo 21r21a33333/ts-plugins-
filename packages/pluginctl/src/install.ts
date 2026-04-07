@@ -1,3 +1,7 @@
+/**
+ * Resolves plugin packages into the immutable install cache layout.
+ */
+
 import { buildPluginServiceDefinition } from "@balance/plugin-codegen";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { mkdtemp } from "node:fs/promises";
@@ -28,6 +32,9 @@ export interface InstalledPlugin {
   manifest: PluginManifest;
 }
 
+/**
+ * Installs a plugin package into the immutable local cache used by the host runtime.
+ */
 export async function installPlugin(
   input: InstallPluginInput,
 ): Promise<InstalledPlugin> {
@@ -42,6 +49,7 @@ export async function installPlugin(
         : undefined;
 
     if (input.source.kind === "folder") {
+      // Folder installs trust the local workspace as-is so authors can iterate quickly.
       await cp(resolve(input.source.path), packageRoot, { recursive: true });
     } else if (input.source.kind === "tarball") {
       await pacote.extract(resolve(input.source.path), packageRoot);
@@ -151,6 +159,9 @@ function addTopLevelEntry(entries: Set<string>, value: string): void {
   }
 }
 
+/**
+ * Persists a normalized description of the install source for later auditing.
+ */
 function serializeSource(
   source: PluginInstallSource,
   pacoteManifest?: {

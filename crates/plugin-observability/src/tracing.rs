@@ -1,3 +1,5 @@
+//! Trace-context extraction and propagation helpers for cross-process plugin calls.
+
 use opentelemetry::trace::TraceContextExt;
 use plugin_protocol::TraceContext;
 use tracing_opentelemetry::OpenTelemetrySpanExt;

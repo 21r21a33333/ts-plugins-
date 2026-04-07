@@ -1,4 +1,6 @@
 #![cfg(unix)]
+//! Unix domain socket transport for host-to-runtime RPC traffic.
+
 
 use std::{
     io::{Read, Write},

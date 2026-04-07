@@ -1,3 +1,5 @@
+//! Protocol envelope encoding and decoding for runtime traffic.
+
 use bytes::{Bytes, BytesMut};
 use prost::Message;
 

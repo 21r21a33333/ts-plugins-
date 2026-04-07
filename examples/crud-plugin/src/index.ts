@@ -1,3 +1,7 @@
+/**
+ * Demo plugin that combines SQLite, Redis-backed KV, and warm caches for CRUD workflows.
+ */
+
 import { DatabaseSync } from "node:sqlite";
 
 import { definePlugin } from "@balance/plugin-runtime";

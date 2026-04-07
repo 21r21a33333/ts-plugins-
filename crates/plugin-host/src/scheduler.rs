@@ -1,3 +1,5 @@
+//! Bounded request scheduling and circuit-breaker-aware host invocation.
+
 use std::{
     sync::{
         atomic::{AtomicU64, Ordering},

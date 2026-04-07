@@ -1,3 +1,7 @@
+/**
+ * Runs external toolchain commands with consistent error handling.
+ */
+
 import { execFile } from "node:child_process";
 import { access } from "node:fs/promises";
 import { promisify } from "node:util";

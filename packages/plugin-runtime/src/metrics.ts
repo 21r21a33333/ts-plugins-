@@ -1,3 +1,7 @@
+/**
+ * In-memory runtime metrics used by tests and local instrumentation hooks.
+ */
+
 export type MetricOutcome = "success" | "typed_error" | "framework_failure";
 
 export class RuntimeMetrics {

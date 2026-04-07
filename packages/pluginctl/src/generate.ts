@@ -1,3 +1,7 @@
+/**
+ * Drives Buf generation and emits descriptor-backed handler bindings for a plugin project.
+ */
+
 import {
   buildPluginServiceDefinition,
   generateTsHandlersSource,

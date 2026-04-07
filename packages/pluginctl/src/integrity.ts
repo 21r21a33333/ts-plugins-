@@ -1,3 +1,7 @@
+/**
+ * Hashing and integrity helpers for packed or installed plugin artifacts.
+ */
+
 import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";

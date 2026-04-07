@@ -1,3 +1,7 @@
+/**
+ * Builds request contexts for unit-level plugin tests.
+ */
+
 import {
   createMemoryKvBackend,
   createPluginContext,

@@ -1,3 +1,7 @@
+/**
+ * Bootstraps a plugin entrypoint into the typed dispatcher used by the socket runtime.
+ */
+
 import { pathToFileURL } from "node:url";
 
 import type { PluginServiceDefinition } from "@balance/plugin-codegen";
@@ -23,6 +27,9 @@ export interface PluginRuntime extends PluginDispatcher {
   readonly service: PluginServiceDefinition;
 }
 
+/**
+ * Loads a plugin entrypoint, validates the exported handlers, and returns the initialized dispatcher.
+ */
 export async function bootstrapPluginRuntime(
   input: BootstrapPluginRuntimeInput,
 ): Promise<PluginRuntime> {
@@ -89,6 +96,7 @@ function validateHandlers(
     throw new Error(`Plugin is missing handler implementations: ${missing.join(", ")}`);
   }
 
+  // Strict handler validation keeps the runtime aligned with the generated protobuf contract.
   const extra = actual.filter((name) => !expected.has(name));
   if (extra.length > 0) {
     throw new Error(`Plugin exports unexpected handlers: ${extra.join(", ")}`);

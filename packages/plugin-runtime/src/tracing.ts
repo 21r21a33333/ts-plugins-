@@ -1,3 +1,7 @@
+/**
+ * Runtime-side tracing helpers for request-scoped plugin execution spans.
+ */
+
 import { ROOT_CONTEXT, trace } from "@opentelemetry/api";
 
 import type { PluginSpan, PluginTracer } from "./context.js";

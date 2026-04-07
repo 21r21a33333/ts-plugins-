@@ -1,3 +1,7 @@
+/**
+ * Resolves descriptor-backed service metadata for runtime startup.
+ */
+
 import {
   buildPluginServiceDefinition,
   loadDescriptorRegistry,

@@ -1,3 +1,5 @@
+//! Lightweight host-side metric aggregation primitives for tests and local operation.
+
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

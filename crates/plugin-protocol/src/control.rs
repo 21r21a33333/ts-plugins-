@@ -1,3 +1,5 @@
+//! Control-message primitives such as ping/pong and shutdown.
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ControlMessage {
     Ping,

@@ -1,3 +1,7 @@
+/**
+ * Scaffolds new plugin projects from the repository's default template set.
+ */
+
 import { renderDefaultPluginTemplate } from "@balance/plugin-templates";
 import { access, mkdir, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";

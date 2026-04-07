@@ -1,3 +1,7 @@
+/**
+ * Piscina worker entry logic for parallel-safe plugin request execution.
+ */
+
 import { pathToFileURL } from "node:url";
 
 import { createPluginContext, type PluginRuntimeManifest } from "./context.js";

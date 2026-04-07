@@ -1,3 +1,5 @@
+//! Shared KV configuration types used by the host and the Node runtime.
+
 use serde::{Deserialize, Serialize};
 
 use crate::{memory::MemoryKvConfig, redis::RedisKvConfig};

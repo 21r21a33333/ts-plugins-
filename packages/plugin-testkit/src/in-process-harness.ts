@@ -1,3 +1,7 @@
+/**
+ * Spins up the runtime stack in-process for high-speed integration testing.
+ */
+
 import type { PluginServiceDefinition } from "@balance/plugin-codegen";
 import {
   PluginExecutionError,

@@ -1,3 +1,7 @@
+/**
+ * Separates framework failures from typed business errors returned by plugins.
+ */
+
 import type { PluginMethodDefinition } from "@balance/plugin-codegen";
 
 import type { PluginContext } from "./context.js";

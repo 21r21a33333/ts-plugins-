@@ -1,3 +1,7 @@
+/**
+ * Node process entrypoint for running a plugin over the socket-based protocol.
+ */
+
 import { pathToFileURL } from "node:url";
 
 import type { PluginServiceDefinition } from "@balance/plugin-codegen";

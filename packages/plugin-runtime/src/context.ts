@@ -1,3 +1,7 @@
+/**
+ * Builds the request-scoped context object exposed to plugin handlers.
+ */
+
 import type { PluginMethodDefinition, PluginServiceDefinition } from "@balance/plugin-codegen";
 
 import { createStructuredLogger, type LogEvent } from "./logger.js";
@@ -93,6 +97,9 @@ export interface PluginContextFactory {
   (input: PluginContextFactoryInput): PluginContext;
 }
 
+/**
+ * Creates the request-scoped context passed into each plugin handler invocation.
+ */
 export function createPluginContext(input: PluginContextFactoryInput): PluginContext {
   const traceContext = extractTraceContext(input.traceContext) ?? undefined;
   const logSink = resolveLogSink(input);
