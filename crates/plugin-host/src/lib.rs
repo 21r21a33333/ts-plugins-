@@ -18,7 +18,7 @@ pub use registry::{
     ActivationMode, ActivationStatus, PluginManifest, PluginRegistry,
     PluginRegistryEntry,
 };
-pub use runtime_handle::{RuntimeFactory, RuntimeHandle};
+pub use runtime_handle::{HostRuntimeConfig, RuntimeFactory, RuntimeHandle, RuntimeInitContext};
 pub use supervisor::{
     RuntimeSupervisor, SupervisorError, SupervisorProcessFactory, SupervisorRuntime,
     TokioProcessFactory,

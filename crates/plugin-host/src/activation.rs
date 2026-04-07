@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     registry::{ActivationStatus, PluginRegistry},
-    runtime_handle::RuntimeFactory,
+    runtime_handle::{HostRuntimeConfig, RuntimeFactory},
 };
 
 #[derive(Debug, Clone)]
@@ -45,6 +45,7 @@ pub struct ActivationManager<TFactory, TClock> {
     runtime_factory: TFactory,
     clock: TClock,
     retry_backoff: Duration,
+    runtime_config: HostRuntimeConfig,
 }
 
 impl<TFactory, TClock> ActivationManager<TFactory, TClock>
@@ -57,12 +58,14 @@ where
         runtime_factory: TFactory,
         clock: TClock,
         retry_backoff: Duration,
+        runtime_config: HostRuntimeConfig,
     ) -> Self {
         Self {
             registry,
             runtime_factory,
             clock,
             retry_backoff,
+            runtime_config,
         }
     }
 
@@ -89,8 +92,9 @@ where
             .runtime_factory
             .start(&entry.manifest, &entry.installed_path)
             .map_err(ActivationError::RuntimeStart)?;
+        let init_context = self.runtime_config.init_context_for(&entry.manifest);
 
-        if let Err(error) = runtime.init() {
+        if let Err(error) = runtime.init(&init_context) {
             entry.activation_status = ActivationStatus::Unhealthy;
             entry.runtime_active = false;
             entry.next_retry_at = Some(now + self.retry_backoff);

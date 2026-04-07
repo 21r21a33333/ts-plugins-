@@ -1,6 +1,6 @@
 use plugin_host::{
-    ActivationManager, ActivationStatus, MockClock, PluginManifest, PluginRegistry,
-    RuntimeFactory, RuntimeHandle,
+    ActivationManager, ActivationStatus, HostRuntimeConfig, MockClock, PluginManifest,
+    PluginRegistry, RuntimeFactory, RuntimeHandle, RuntimeInitContext,
 };
 use std::{
     cell::RefCell,
@@ -24,6 +24,7 @@ fn first_call_triggers_lazy_activation() {
         factory,
         MockClock::default(),
         Duration::from_secs(30),
+        HostRuntimeConfig::memory_for_local(),
     );
 
     let activated = manager
@@ -53,6 +54,7 @@ fn startup_plugins_activate_on_host_boot() {
         factory,
         MockClock::default(),
         Duration::from_secs(30),
+        HostRuntimeConfig::memory_for_local(),
     );
 
     let activated = manager
@@ -78,6 +80,7 @@ fn failed_init_keeps_the_plugin_unhealthy() {
         factory,
         MockClock::default(),
         Duration::from_secs(30),
+        HostRuntimeConfig::memory_for_local(),
     );
 
     let error = manager
@@ -111,6 +114,7 @@ fn activation_retries_respect_backoff() {
         factory,
         clock.clone(),
         Duration::from_secs(30),
+        HostRuntimeConfig::memory_for_local(),
     );
 
     manager
@@ -155,7 +159,7 @@ impl FakeRuntime {
 }
 
 impl RuntimeHandle for FakeRuntime {
-    fn init(&mut self) -> Result<(), String> {
+    fn init(&mut self, _init_context: &RuntimeInitContext) -> Result<(), String> {
         self.init_result.clone()
     }
 }
