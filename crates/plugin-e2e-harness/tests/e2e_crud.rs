@@ -43,8 +43,8 @@ fn crud_demo_plugin_persists_db_state_and_redis_kv_across_restart() {
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
         manifest_json: r#"{"id":"crud-plugin","version":"0.1.0"}"#,
         entrypoint_relative: "examples/crud-plugin/dist/src/index.js",
-        service_module_relative: "examples/crud-plugin/dist/gen/plugin-handlers.js",
-        service_export_name: "crudPluginMetadata",
+        descriptor_relative: "descriptors/contracts.binpb",
+        service_name: "balance.plugins.crud.v1.CrudPluginService",
         kv_json: Some(kv_json.clone()),
     });
 
@@ -87,8 +87,8 @@ fn crud_demo_plugin_persists_db_state_and_redis_kv_across_restart() {
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
         manifest_json: r#"{"id":"crud-plugin","version":"0.1.0"}"#,
         entrypoint_relative: "examples/crud-plugin/dist/src/index.js",
-        service_module_relative: "examples/crud-plugin/dist/gen/plugin-handlers.js",
-        service_export_name: "crudPluginMetadata",
+        descriptor_relative: "descriptors/contracts.binpb",
+        service_name: "balance.plugins.crud.v1.CrudPluginService",
         kv_json: Some(kv_json),
     });
 

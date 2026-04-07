@@ -404,6 +404,107 @@ describe("startPluginSocketRuntimeServer", () => {
     socket.destroy();
     await server.close();
   });
+
+  it("enforces request timeout settings from the runtime manifest", async () => {
+    const tempDir = await mkdtemp(join(os.tmpdir(), "plugin-runtime-socket-"));
+    tempDirs.push(tempDir);
+    const socketPath = join(tempDir, "plugin.sock");
+
+    const server = await startPluginSocketRuntimeServer({
+      socketPath,
+      manifest: {
+        id: "quote-plugin",
+        version: "1.0.0",
+        runtime: {
+          requestTimeoutMs: 5,
+        },
+      },
+      service: runtimeService,
+      loadModule: async () => ({
+        default: definePlugin({
+          async init() {
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  pluginName: "quote-plugin",
+                  pluginVersion: "1.0.0",
+                },
+              },
+            };
+          },
+          async getPrice() {
+            await new Promise((resolve) => setTimeout(resolve, 25));
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  price: "late",
+                  currency: "USD",
+                  expiresAt: "2030-01-01T00:00:00Z",
+                },
+              },
+            };
+          },
+        }),
+      }),
+    });
+
+    const socket = await connect(socketPath);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 1n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 2026714057,
+            payload: toBinary(
+              InitRequestSchema,
+              create(InitRequestSchema, {
+                pluginInstanceId: "quote-plugin",
+                environment: "production",
+                config: {},
+              }),
+            ),
+          },
+        },
+      }),
+    );
+    await readEnvelope(socket);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 2n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 758358830,
+            payload: toBinary(
+              GetPriceRequestSchema,
+              create(GetPriceRequestSchema, {
+                asset: "BTC",
+                amount: "1",
+              }),
+            ),
+          },
+        },
+      }),
+    );
+
+    const timeoutResponse = await readEnvelope(socket);
+    expect(timeoutResponse.body.case).toBe("frameworkError");
+    if (timeoutResponse.body.case !== "frameworkError") {
+      throw new Error(`expected frameworkError, received ${timeoutResponse.body.case}`);
+    }
+    expect(timeoutResponse.body.value.message).toContain("timed out");
+
+    await server.close();
+  });
 });
 
 async function connect(socketPath: string): Promise<net.Socket> {

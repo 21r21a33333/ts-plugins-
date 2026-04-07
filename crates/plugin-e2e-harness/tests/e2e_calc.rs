@@ -22,8 +22,8 @@ fn calculation_demo_plugin_adds_numbers_end_to_end() {
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
         manifest_json: r#"{"id":"calculation-plugin","version":"0.1.0"}"#,
         entrypoint_relative: "examples/calculation-plugin/dist/src/index.js",
-        service_module_relative: "examples/calculation-plugin/dist/gen/plugin-handlers.js",
-        service_export_name: "calcPluginMetadata",
+        descriptor_relative: "descriptors/contracts.binpb",
+        service_name: "balance.plugins.calc.v1.CalcPluginService",
         kv_json: None,
     });
 

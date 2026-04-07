@@ -13,8 +13,8 @@ use std::{
 pub struct PluginProcessSpec<'a> {
     pub manifest_json: &'a str,
     pub entrypoint_relative: &'a str,
-    pub service_module_relative: &'a str,
-    pub service_export_name: &'a str,
+    pub descriptor_relative: &'a str,
+    pub service_name: &'a str,
     pub kv_json: Option<String>,
 }
 
@@ -55,7 +55,7 @@ pub fn spawn_plugin_process(spec: PluginProcessSpec<'_>) -> RunningPluginProcess
     let socket_path = temp_socket_path("plugin-e2e");
     let runtime_process = workspace_root.join("packages/plugin-runtime/dist/src/process-main.js");
     let plugin_entry = workspace_root.join(spec.entrypoint_relative);
-    let service_module = workspace_root.join(spec.service_module_relative);
+    let descriptor_path = workspace_root.join(spec.descriptor_relative);
 
     let mut command = Command::new("node");
     command
@@ -64,8 +64,8 @@ pub fn spawn_plugin_process(spec: PluginProcessSpec<'_>) -> RunningPluginProcess
         .env("BALANCE_PLUGIN_SOCKET_PATH", &socket_path)
         .env("BALANCE_PLUGIN_MANIFEST_JSON", spec.manifest_json)
         .env("BALANCE_PLUGIN_ENTRYPOINT", plugin_entry)
-        .env("BALANCE_PLUGIN_SERVICE_MODULE", service_module)
-        .env("BALANCE_PLUGIN_SERVICE_EXPORT", spec.service_export_name);
+        .env("BALANCE_PLUGIN_DESCRIPTOR_PATH", descriptor_path)
+        .env("BALANCE_PLUGIN_SERVICE_NAME", spec.service_name);
 
     if let Some(kv_json) = spec.kv_json {
         command.env("BALANCE_PLUGIN_KV_JSON", kv_json);

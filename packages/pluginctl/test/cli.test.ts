@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   access,
+  chmod,
   copyFile,
   mkdir,
   mkdtemp,
@@ -10,8 +11,12 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { execFile as execFileCallback } from "node:child_process";
+import { promisify } from "node:util";
 
 import * as pluginctl from "../src/index.js";
+
+const execFile = promisify(execFileCallback);
 
 describe("pluginctl cli", () => {
   const tempRoots: string[] = [];
@@ -208,6 +213,22 @@ describe("pluginctl cli", () => {
     expect(joined).toContain("\"GetPrice\"");
   });
 
+  it("ships pluginctl as an executable workspace command", async () => {
+    await execFile("pnpm", ["exec", "tsc", "-p", "tsconfig.json"], {
+      cwd: process.cwd(),
+    });
+    const cliPath = join(process.cwd(), "dist", "cli.js");
+    await chmod(cliPath, 0o755);
+
+    const result = await execFile("node", [cliPath, "--help"], {
+      cwd: process.cwd(),
+    });
+
+    expect(result.stdout).toContain("pluginctl");
+    expect(result.stdout).toContain("init");
+    expect(result.stdout).toContain("generate");
+  });
+
   it("packs a plugin directory through the cli", async () => {
     const fixture = await createPluginFixture();
     const outputDir = await mkdtemp(join(tmpdir(), "pluginctl-cli-output-"));
@@ -231,6 +252,63 @@ describe("pluginctl cli", () => {
 
     const tarballPath = output.join("").trim();
     expect(tarballPath).toContain("quote-plugin-1.0.0.tgz");
+  });
+
+  it("scaffolds a new plugin project through the cli", async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), "pluginctl-init-"));
+    tempRoots.push(workspaceRoot);
+    const projectDir = join(workspaceRoot, "weather-plugin");
+    const output: string[] = [];
+
+    await (
+      pluginctl as {
+        runCli: (
+          argv: string[],
+          options?: { stdout?: { write: (value: string) => void } },
+        ) => Promise<void>;
+      }
+    ).runCli(
+      [
+        "init",
+        projectDir,
+        "--id",
+        "weather-plugin",
+        "--package",
+        "balance.plugins.weather.v1",
+        "--service",
+        "WeatherPluginService",
+      ],
+      {
+        stdout: {
+          write(value: string) {
+            output.push(value);
+          },
+        },
+      },
+    );
+
+    expect(output.join("")).toContain("\"projectDir\"");
+    await expect(
+      readFile(join(projectDir, "plugin.json"), "utf8"),
+    ).resolves.toContain("\"id\": \"weather-plugin\"");
+    await expect(
+      readFile(
+        join(
+          projectDir,
+          "proto",
+          "balance",
+          "plugins",
+          "weather",
+          "v1",
+          "weather_plugin.proto",
+        ),
+        "utf8",
+      ),
+    ).resolves.toContain("service WeatherPluginService");
+    await expect(
+      readFile(join(projectDir, "src", "index.ts"), "utf8"),
+    ).resolves.toContain("definePlugin");
+    await access(join(projectDir, "tsconfig.json"));
   });
 
   it("installs a local folder through the cli", async () => {

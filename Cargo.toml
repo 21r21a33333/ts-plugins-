@@ -5,6 +5,7 @@ members = [
   "crates/plugin-kv",
   "crates/plugin-observability",
   "crates/plugin-e2e-harness",
+  "examples/rust-caller",
 ]
 resolver = "2"
 
@@ -12,4 +13,3 @@ resolver = "2"
 edition = "2024"
 license = "MIT"
 authors = ["Diwakar Matsaa"]
-

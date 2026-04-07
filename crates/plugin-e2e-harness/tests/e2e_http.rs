@@ -46,8 +46,8 @@ fn http_demo_plugin_fetches_a_local_api_end_to_end() {
     let mut runtime = spawn_plugin_process(PluginProcessSpec {
         manifest_json: r#"{"id":"http-plugin","version":"0.1.0"}"#,
         entrypoint_relative: "examples/http-plugin/dist/src/index.js",
-        service_module_relative: "examples/http-plugin/dist/gen/plugin-handlers.js",
-        service_export_name: "httpPluginMetadata",
+        descriptor_relative: "descriptors/contracts.binpb",
+        service_name: "balance.plugins.http.v1.HttpPluginService",
         kv_json: None,
     });
 

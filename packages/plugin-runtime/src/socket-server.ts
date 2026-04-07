@@ -166,9 +166,17 @@ export async function startPluginSocketRuntimeServer(
 
       try {
         const request = decodePayload(method.inputSchema, payload);
-        const result = method.name === "Init"
-          ? await runtime.initialize(request, { traceContext })
-          : await runtime.invoke(methodId, request, { traceContext });
+        const timeoutMs =
+          method.name === "Init"
+            ? input.manifest.runtime?.initTimeoutMs
+            : input.manifest.runtime?.requestTimeoutMs;
+        const result = await withTimeout(
+          method.name === "Init"
+            ? runtime.initialize(request, { traceContext })
+            : runtime.invoke(methodId, request, { traceContext }),
+          timeoutMs,
+          `${method.canonicalName} timed out after ${timeoutMs}ms`,
+        );
 
         return createRpcResponseEnvelope({
           requestId,
@@ -214,6 +222,28 @@ export async function startPluginSocketRuntimeServer(
       await rm(input.socketPath, { force: true });
     },
   };
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number | undefined,
+  timeoutMessage: string,
+): Promise<T> {
+  if (timeoutMs === undefined) {
+    return promise;
+  }
+
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error(timeoutMessage));
+      }, timeoutMs);
+      promise.finally(() => {
+        clearTimeout(timer);
+      });
+    }),
+  ]);
 }
 
 function assertSchemaAwareService(

@@ -1,0 +1,11 @@
+[package]
+name = "example-rust-caller"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+plugin-host = { path = "../../crates/plugin-host" }
+prost = "0.14.1"
+serde_json = "1.0.145"

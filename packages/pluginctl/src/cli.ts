@@ -1,7 +1,11 @@
+#!/usr/bin/env node
+
 import cac from "cac";
+import { pathToFileURL } from "node:url";
 
 import { buildPlugin } from "./build.js";
 import { generatePluginBindings } from "./generate.js";
+import { initPluginProject } from "./init.js";
 import { installPlugin } from "./install.js";
 import { packPlugin } from "./pack.js";
 import { testPlugin } from "./test.js";
@@ -19,6 +23,44 @@ export function createCli(io: CliIo = {}) {
   cli.version("0.1.0");
 
   cli
+    .command("init <projectDir>", "Scaffold a new plugin project from the default template")
+    .option("--id <id>", "Plugin package identifier", {
+      type: [String],
+    })
+    .option("--package <protobufPackage>", "Protobuf package name", {
+      type: [String],
+    })
+    .option("--service <serviceName>", "Protobuf service name", {
+      type: [String],
+    })
+    .action(
+      async (
+        projectDir: string,
+        options: {
+          id?: string | string[];
+          package?: string | string[];
+          service?: string | string[];
+        },
+      ) => {
+        const id = firstOptionValue(options.id);
+        const packageName = firstOptionValue(options.package);
+        const serviceName = firstOptionValue(options.service);
+
+        if (id === undefined || packageName === undefined || serviceName === undefined) {
+          throw new Error("The --id, --package, and --service options are required for init");
+        }
+
+        const initialized = await initPluginProject({
+          projectDir,
+          id,
+          packageName,
+          serviceName,
+        });
+        stdout.write(`${JSON.stringify(initialized, null, 2)}\n`);
+      },
+    );
+
+  cli
     .command("inspect <manifestPath>", "Print manifest and contract metadata")
     .action(async (manifestPath: string) => {
       const validated = await validatePluginManifest(manifestPath);
@@ -26,7 +68,7 @@ export function createCli(io: CliIo = {}) {
         `${JSON.stringify(
           {
             manifest: validated.manifest,
-            contract: validated.contract,
+            contract: serializeContractForInspect(validated.contract),
           },
           null,
           2,
@@ -145,4 +187,39 @@ function firstOptionValue(
     return value[0];
   }
   return value;
+}
+
+function serializeContractForInspect(contract: {
+  packageName: string;
+  serviceName: string;
+  typeName: string;
+  methods: Array<{
+    name: string;
+    localName: string;
+    canonicalName: string;
+    methodId: number;
+    inputType: string;
+    outputType: string;
+  }>;
+}) {
+  return {
+    packageName: contract.packageName,
+    serviceName: contract.serviceName,
+    typeName: contract.typeName,
+    methods: contract.methods.map((method) => ({
+      name: method.name,
+      localName: method.localName,
+      canonicalName: method.canonicalName,
+      methodId: method.methodId,
+      inputType: method.inputType,
+      outputType: method.outputType,
+    })),
+  };
+}
+
+if (process.argv[1] !== undefined) {
+  const invokedPath = pathToFileURL(process.argv[1]).href;
+  if (import.meta.url === invokedPath) {
+    await runCli(process.argv.slice(2));
+  }
 }

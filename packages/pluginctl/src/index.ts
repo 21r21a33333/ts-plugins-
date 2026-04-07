@@ -1,4 +1,9 @@
 export {
+  initPluginProject,
+  type InitPluginInput,
+  type InitializedPluginProject,
+} from "./init.js";
+export {
   pluginManifestSchema,
   type PluginManifest,
 } from "./manifest-schema.js";

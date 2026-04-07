@@ -73,6 +73,20 @@ export interface PluginContextFactoryInput {
 export interface PluginRuntimeManifest {
   id: string;
   version: string;
+  runtime?: {
+    initTimeoutMs?: number;
+    requestTimeoutMs?: number;
+    idleEvictionMs?: number;
+    concurrency?: {
+      mode: "serial" | "parallel-safe" | "max_concurrency";
+      maxConcurrency?: number;
+    };
+  };
+  observability?: {
+    emitLogs?: boolean;
+    emitTraces?: boolean;
+    emitMetrics?: boolean;
+  };
 }
 
 export interface PluginContextFactory {

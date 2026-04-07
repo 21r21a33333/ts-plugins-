@@ -70,6 +70,8 @@ export function buildPluginServiceDefinition(
       ),
       inputType: method.input.typeName,
       outputType: method.output.typeName,
+      inputSchema: method.input as DescMessage,
+      outputSchema: method.output as DescMessage,
     })),
   };
 }

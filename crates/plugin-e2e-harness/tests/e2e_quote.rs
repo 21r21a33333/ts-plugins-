@@ -88,7 +88,7 @@ fn workspace_root() -> PathBuf {
 fn spawn_quote_plugin_process(workspace_root: &Path, socket_path: &Path) -> Child {
     let runtime_process = workspace_root.join("packages/plugin-runtime/dist/src/process-main.js");
     let plugin_entry = workspace_root.join("examples/quote-plugin/dist/src/index.js");
-    let service_module = workspace_root.join("examples/quote-plugin/dist/gen/plugin-handlers.js");
+    let descriptor_path = workspace_root.join("descriptors/contracts.binpb");
 
     Command::new("node")
         .arg(runtime_process)
@@ -99,8 +99,11 @@ fn spawn_quote_plugin_process(workspace_root: &Path, socket_path: &Path) -> Chil
             r#"{"id":"quote-plugin","version":"0.1.0"}"#,
         )
         .env("BALANCE_PLUGIN_ENTRYPOINT", plugin_entry)
-        .env("BALANCE_PLUGIN_SERVICE_MODULE", service_module)
-        .env("BALANCE_PLUGIN_SERVICE_EXPORT", "quotePluginMetadata")
+        .env("BALANCE_PLUGIN_DESCRIPTOR_PATH", descriptor_path)
+        .env(
+            "BALANCE_PLUGIN_SERVICE_NAME",
+            "balance.plugins.quote.v1.QuotePluginService",
+        )
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()

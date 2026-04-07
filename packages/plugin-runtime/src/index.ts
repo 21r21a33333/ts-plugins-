@@ -4,6 +4,10 @@ export {
   type PluginRuntime,
 } from "./bootstrap.js";
 export {
+  loadRuntimeServiceDefinition,
+  type LoadRuntimeServiceDefinitionInput,
+} from "./service-definition.js";
+export {
   createPluginContext,
   type PluginContext,
   type PluginContextFactory,
