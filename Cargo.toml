@@ -1,0 +1,15 @@
+[workspace]
+members = [
+  "crates/plugin-host",
+  "crates/plugin-protocol",
+  "crates/plugin-kv",
+  "crates/plugin-observability",
+  "crates/plugin-e2e-harness",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+authors = ["Diwakar Matsaa"]
+

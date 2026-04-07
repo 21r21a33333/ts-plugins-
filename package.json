@@ -1,0 +1,19 @@
+{
+  "name": "ts-plugins-workspace",
+  "private": true,
+  "packageManager": "pnpm@10.17.1",
+  "devDependencies": {
+    "@bufbuild/buf": "^1.67.0",
+    "@bufbuild/protoc-gen-es": "^2.9.0",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "generate": "pnpm exec buf generate && pnpm exec buf build --as-file-descriptor-set -o descriptors/contracts.binpb",
+    "buf:lint": "pnpm exec buf lint",
+    "buf:generate": "pnpm exec buf generate",
+    "buf:descriptor": "pnpm exec buf build --as-file-descriptor-set -o descriptors/contracts.binpb"
+  }
+}
