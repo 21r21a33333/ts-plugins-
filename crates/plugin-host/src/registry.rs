@@ -4,6 +4,8 @@ use std::{
     time::Instant,
 };
 
+use crate::circuit_breaker::CircuitBreakerState;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ActivationMode {
     Lazy,
@@ -37,11 +39,6 @@ pub enum ActivationStatus {
     Inactive,
     Ready,
     Unhealthy,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CircuitBreakerState {
-    Closed,
 }
 
 #[derive(Debug)]
