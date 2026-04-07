@@ -1,5 +1,7 @@
 import cac from "cac";
 
+import { buildPlugin } from "./build.js";
+import { generatePluginBindings } from "./generate.js";
 import { installPlugin } from "./install.js";
 import { packPlugin } from "./pack.js";
 import { validatePluginManifest } from "./validate-manifest.js";
@@ -47,6 +49,40 @@ export function createCli(io: CliIo = {}) {
         outputDir,
       });
       stdout.write(`${packed.tarballPath}\n`);
+    });
+
+  cli
+    .command("generate <projectDir>", "Generate protobuf artifacts and typed handlers")
+    .action(async (projectDir: string) => {
+      const generated = await generatePluginBindings({
+        projectDir,
+      });
+      stdout.write(
+        `${JSON.stringify(
+          {
+            descriptorPath: generated.descriptorPath,
+            handlersPath: generated.handlersPath,
+          },
+          null,
+          2,
+        )}\n`,
+      );
+    });
+
+  cli
+    .command("build <projectDir>", "Compile the plugin and validate the manifest")
+    .action(async (projectDir: string) => {
+      const built = await buildPlugin({ projectDir });
+      stdout.write(
+        `${JSON.stringify(
+          {
+            manifestPath: built.manifestPath,
+            mainPath: built.mainPath,
+          },
+          null,
+          2,
+        )}\n`,
+      );
     });
 
   cli

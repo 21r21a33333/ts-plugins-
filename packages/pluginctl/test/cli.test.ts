@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  access,
   copyFile,
   mkdir,
   mkdtemp,
@@ -62,6 +63,104 @@ describe("pluginctl cli", () => {
           contract: {
             descriptorSet: "./descriptors/plugin.pb",
             service: "balance.plugins.quote.v1.QuotePluginService",
+          },
+          runtime: {
+            language: "node",
+            activation: { mode: "lazy" },
+            concurrency: { mode: "serial" },
+            initTimeoutMs: 5_000,
+            requestTimeoutMs: 10_000,
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    return { rootDir, manifestPath };
+  }
+
+  async function createAuthoringFixture(options?: {
+    invalidContract?: boolean;
+    mainPath?: string;
+  }): Promise<{
+    rootDir: string;
+    manifestPath: string;
+  }> {
+    const rootDir = await mkdtemp(join(tmpdir(), "pluginctl-authoring-"));
+    tempRoots.push(rootDir);
+
+    await mkdir(join(rootDir, "proto", "balance", "plugins", "quote", "v1"), {
+      recursive: true,
+    });
+    await mkdir(join(rootDir, "src"), { recursive: true });
+    await mkdir(join(rootDir, "descriptors"), { recursive: true });
+
+    await writeFile(
+      join(rootDir, "package.json"),
+      `${JSON.stringify(
+        {
+          name: "quote-plugin",
+          version: "1.0.0",
+          private: true,
+          type: "module",
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    await writeFile(
+      join(rootDir, "tsconfig.json"),
+      `${JSON.stringify(
+        {
+          compilerOptions: {
+            target: "ES2022",
+            module: "ES2022",
+            moduleResolution: "Bundler",
+            outDir: "dist",
+            rootDir: "src",
+            sourceMap: true,
+            strict: true,
+          },
+          include: ["src/**/*.ts"],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    await writeFile(
+      join(rootDir, "buf.yaml"),
+      `version: v2\nmodules:\n  - path: proto\nlint:\n  use:\n    - STANDARD\n`,
+    );
+    await writeFile(
+      join(rootDir, "buf.gen.yaml"),
+      `version: v2\nplugins:\n  - local: protoc-gen-es\n    out: gen/ts\n    opt:\n      - target=ts\n      - import_extension=none\n`,
+    );
+    await writeFile(
+      join(rootDir, "src", "index.ts"),
+      "export default { kind: 'quote-plugin' };\n",
+    );
+    await writeFile(
+      join(rootDir, "proto", "balance", "plugins", "quote", "v1", "quote_plugin.proto"),
+      options?.invalidContract
+        ? `syntax = "proto3";\npackage balance.plugins.quote.v1;\nmessage GetPriceRequest { string asset = 1; }\nmessage GetPriceResponse { string price = 1; }\nservice QuotePluginService {\n  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);\n}\n`
+        : `syntax = "proto3";\npackage balance.plugins.quote.v1;\nmessage InitRequest { string plugin_instance_id = 1; }\nmessage InitResponse { string plugin_name = 1; }\nmessage GetPriceRequest { string asset = 1; }\nmessage GetPriceResponse { string price = 1; }\nservice QuotePluginService {\n  rpc Init(InitRequest) returns (InitResponse);\n  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);\n}\n`,
+    );
+
+    const manifestPath = join(rootDir, "plugin.json");
+    await writeFile(
+      manifestPath,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          id: "quote-plugin",
+          version: "1.0.0",
+          main: options?.mainPath ?? "./dist/index.js",
+          sourceMap: "./dist/index.js.map",
+          contract: {
+            descriptorSet: "./descriptors/plugin.pb",
+            service: "balance.plugins.quote.v1.QuotePluginService",
+            protoSources: ["./proto/balance/plugins/quote/v1/quote_plugin.proto"],
           },
           runtime: {
             language: "node",
@@ -169,5 +268,132 @@ describe("pluginctl cli", () => {
 
     expect(installDir).toContain("/registry/plugins/quote-plugin/1.0.0");
     expect(installMetadata.source.kind).toBe("folder");
+  });
+
+  it("generates descriptors and typed handlers for an authoring workspace", async () => {
+    const fixture = await createAuthoringFixture();
+    const output: string[] = [];
+
+    await (
+      pluginctl as {
+        runCli: (
+          argv: string[],
+          options?: { stdout?: { write: (value: string) => void } },
+        ) => Promise<void>;
+      }
+    ).runCli(["generate", fixture.rootDir], {
+      stdout: {
+        write(value: string) {
+          output.push(value);
+        },
+      },
+    });
+
+    const result = JSON.parse(output.join("")) as {
+      descriptorPath: string;
+      handlersPath: string;
+    };
+
+    await expect(access(result.descriptorPath)).resolves.toBeUndefined();
+    await expect(access(result.handlersPath)).resolves.toBeUndefined();
+
+    const handlersSource = await readFile(result.handlersPath, "utf8");
+    expect(handlersSource).toContain("export interface QuotePluginHandlers");
+    expect(handlersSource).toContain("getPrice(req: GetPriceRequest");
+  });
+
+  it("fails generate when the contract does not define Init", async () => {
+    const fixture = await createAuthoringFixture({ invalidContract: true });
+
+    await expect(
+      (
+        pluginctl as {
+          runCli: (
+            argv: string[],
+            options?: { stdout?: { write: (value: string) => void } },
+          ) => Promise<void>;
+        }
+      ).runCli(["generate", fixture.rootDir]),
+    ).rejects.toThrow(/Init/i);
+  });
+
+  it("builds a generated plugin workspace and validates its manifest", async () => {
+    const fixture = await createAuthoringFixture();
+    const generationOutput: string[] = [];
+
+    await (
+      pluginctl as {
+        runCli: (
+          argv: string[],
+          options?: { stdout?: { write: (value: string) => void } },
+        ) => Promise<void>;
+      }
+    ).runCli(["generate", fixture.rootDir], {
+      stdout: {
+        write(value: string) {
+          generationOutput.push(value);
+        },
+      },
+    });
+
+    expect(JSON.parse(generationOutput.join(""))).toHaveProperty("descriptorPath");
+
+    const output: string[] = [];
+    await (
+      pluginctl as {
+        runCli: (
+          argv: string[],
+          options?: { stdout?: { write: (value: string) => void } },
+        ) => Promise<void>;
+      }
+    ).runCli(["build", fixture.rootDir], {
+      stdout: {
+        write(value: string) {
+          output.push(value);
+        },
+      },
+    });
+
+    const result = JSON.parse(output.join("")) as {
+      mainPath: string;
+    };
+
+    await expect(access(result.mainPath)).resolves.toBeUndefined();
+    await expect(access(join(fixture.rootDir, "dist", "index.js.map"))).resolves.toBeUndefined();
+  });
+
+  it("fails build when the compiled entrypoint does not match plugin.json", async () => {
+    const fixture = await createAuthoringFixture({
+      mainPath: "./dist/wrong.js",
+    });
+    const generationOutput: string[] = [];
+
+    await (
+      pluginctl as {
+        runCli: (
+          argv: string[],
+          options?: { stdout?: { write: (value: string) => void } },
+        ) => Promise<void>;
+      }
+    ).runCli(["generate", fixture.rootDir], {
+      stdout: {
+        write(value: string) {
+          generationOutput.push(value);
+        },
+      },
+    });
+
+    expect(JSON.parse(generationOutput.join(""))).toHaveProperty("handlersPath");
+
+    await expect(
+      (
+        pluginctl as {
+          runCli: (
+            argv: string[],
+            options?: { stdout?: { write: (value: string) => void } },
+          ) => Promise<void>;
+        }
+      ).runCli(["build", fixture.rootDir]),
+    ).rejects.toThrow(/main/i);
   });
 });

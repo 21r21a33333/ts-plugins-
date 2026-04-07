@@ -12,4 +12,10 @@ export {
   type InstalledPlugin,
   type PluginInstallSource,
 } from "./install.js";
+export {
+  generatePluginBindings,
+  type GeneratePluginBindingsInput,
+  type GeneratedPluginBindings,
+} from "./generate.js";
+export { buildPlugin, type BuildPluginInput, type BuiltPlugin } from "./build.js";
 export { createCli, runCli, type CliIo } from "./cli.js";
