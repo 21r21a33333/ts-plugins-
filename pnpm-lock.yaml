@@ -59,6 +59,25 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.12.2)
 
+  packages/plugin-testkit:
+    dependencies:
+      '@balance/plugin-codegen':
+        specifier: workspace:*
+        version: link:../plugin-codegen
+      '@balance/plugin-runtime':
+        specifier: workspace:*
+        version: link:../plugin-runtime
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.0
+        version: 24.12.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.12.2)
+
   packages/pluginctl:
     dependencies:
       '@balance/plugin-codegen':
