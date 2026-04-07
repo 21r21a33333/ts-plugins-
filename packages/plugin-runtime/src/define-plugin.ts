@@ -10,6 +10,14 @@ type AnyPluginHandler = (
 
 export type PluginHandlerMap = Record<string, AnyPluginHandler>;
 
-export function definePlugin<THandlers extends PluginHandlerMap>(handlers: THandlers): THandlers {
-  return handlers;
+type PluginHandlerSet<THandlers extends object> = {
+  [TKey in keyof THandlers]: THandlers[TKey] extends AnyPluginHandler
+    ? THandlers[TKey]
+    : never;
+};
+
+export function definePlugin<THandlers extends object>(
+  handlers: PluginHandlerSet<THandlers>,
+): THandlers {
+  return handlers as THandlers;
 }

@@ -41,16 +41,19 @@ describe("generateTsHandlersSource", () => {
       'import type { GetPriceRequest, GetPriceResponse, InitRequest, InitResponse } from "../../gen/ts/balance/plugins/quote/v1/quote_plugin_pb.js";',
     );
     expect(output).toContain(
+      'import type { MessageInitShape } from "@bufbuild/protobuf";',
+    );
+    expect(output).toContain(
       'import { GetPriceRequestSchema, GetPriceResponseSchema, InitRequestSchema, InitResponseSchema } from "../../gen/ts/balance/plugins/quote/v1/quote_plugin_pb.js";',
     );
     expect(output).toContain(
       'export interface QuotePluginHandlers',
     );
     expect(output).toContain(
-      "init(req: InitRequest, ctx: PluginContext): Promise<InitResponse>;",
+      "init(req: InitRequest, ctx: PluginContext): MaybePromise<MessageInitShape<typeof InitResponseSchema>>;",
     );
     expect(output).toContain(
-      "getPrice(req: GetPriceRequest, ctx: PluginContext): Promise<GetPriceResponse>;",
+      "getPrice(req: GetPriceRequest, ctx: PluginContext): MaybePromise<MessageInitShape<typeof GetPriceResponseSchema>>;",
     );
     expect(output).toContain("canonicalName: \"balance.plugins.quote.v1.QuotePluginService/Init\"");
     expect(output).toContain("localName: \"getPrice\"");

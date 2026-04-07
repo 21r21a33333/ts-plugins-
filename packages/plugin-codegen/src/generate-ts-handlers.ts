@@ -19,13 +19,16 @@ export function generateTsHandlersSource(
   const schemaImports = collectSchemaImports(input.service.methods);
 
   const lines = [
+    `import type { MessageInitShape } from "@bufbuild/protobuf";`,
     `import type { ${messageImports.join(", ")} } from ${JSON.stringify(input.messagesModuleSpecifier)};`,
     `import { ${schemaImports.join(", ")} } from ${JSON.stringify(input.messagesModuleSpecifier)};`,
     `import type { ${contextTypeName} } from ${JSON.stringify(runtimeModuleSpecifier)};`,
     "",
+    "export type MaybePromise<T> = T | Promise<T>;",
+    "",
     `export interface ${interfaceName} {`,
     ...input.service.methods.map((method) =>
-      `  ${method.localName}(req: ${shortTypeName(method.inputType)}, ctx: ${contextTypeName}): Promise<${shortTypeName(method.outputType)}>;`,
+      `  ${method.localName}(req: ${shortTypeName(method.inputType)}, ctx: ${contextTypeName}): MaybePromise<MessageInitShape<typeof ${schemaTypeName(method.outputType)}>>;`,
     ),
     "}",
     "",
