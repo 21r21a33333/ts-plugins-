@@ -7,3 +7,4 @@ export { createPluginContext, type PluginContext, type PluginContextFactory } fr
 export { definePlugin, type PluginHandler, type PluginHandlerMap } from "./define-plugin.js";
 export { createPluginDispatcher, type PluginDispatcher } from "./dispatcher.js";
 export { executePluginHandler, PluginExecutionError } from "./errors.js";
+export { PluginWorkerPool, type PluginConcurrencyMode, type PluginWorkerPoolOptions } from "./worker-pool.js";
