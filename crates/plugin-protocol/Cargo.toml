@@ -7,3 +7,9 @@ authors.workspace = true
 
 [lib]
 path = "src/lib.rs"
+doctest = false
+
+[dependencies]
+bytes = "1.10.1"
+prost = "0.14.1"
+tokio-util = { version = "0.7.16", features = ["codec"] }
