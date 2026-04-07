@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package balance.runtime.v1;
+
+message TraceContext {
+  string trace_id = 1;
+  string span_id = 2;
+  uint32 trace_flags = 3;
+}
+
+enum ControlMessageKind {
+  CONTROL_MESSAGE_KIND_PING = 0;
+  CONTROL_MESSAGE_KIND_PONG = 1;
+  CONTROL_MESSAGE_KIND_SHUTDOWN = 2;
+}
+
+enum FrameworkErrorCode {
+  FRAMEWORK_ERROR_CODE_UNKNOWN = 0;
+  FRAMEWORK_ERROR_CODE_TIMEOUT = 1;
+  FRAMEWORK_ERROR_CODE_PROTOCOL_VERSION_MISMATCH = 2;
+  FRAMEWORK_ERROR_CODE_DECODE_FAILED = 3;
+}
+
+message WireRpcRequest {
+  uint32 method_id = 1;
+  bytes payload = 2;
+}
+
+message WireRpcResponse {
+  bytes payload = 1;
+}
+
+message WireControl {
+  ControlMessageKind kind = 1;
+}
+
+message WireFrameworkError {
+  FrameworkErrorCode code = 1;
+  string message = 2;
+}
+
+message WireEnvelope {
+  uint32 protocol_version = 1;
+  uint64 request_id = 2;
+  optional TraceContext trace_context = 3;
+
+  oneof body {
+    WireRpcRequest rpc_request = 4;
+    WireRpcResponse rpc_response = 5;
+    WireControl control = 6;
+    WireFrameworkError framework_error = 7;
+  }
+}

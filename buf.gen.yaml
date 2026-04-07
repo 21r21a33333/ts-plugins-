@@ -1,7 +1,7 @@
 version: v2
 plugins:
   - local: protoc-gen-es
-    out: gen/ts
+    out: packages/plugin-generated/src/generated
     opt:
       - target=ts
       - import_extension=none
