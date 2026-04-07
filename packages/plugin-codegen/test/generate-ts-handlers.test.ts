@@ -41,6 +41,9 @@ describe("generateTsHandlersSource", () => {
       'import type { GetPriceRequest, GetPriceResponse, InitRequest, InitResponse } from "../../gen/ts/balance/plugins/quote/v1/quote_plugin_pb.js";',
     );
     expect(output).toContain(
+      'import { GetPriceRequestSchema, GetPriceResponseSchema, InitRequestSchema, InitResponseSchema } from "../../gen/ts/balance/plugins/quote/v1/quote_plugin_pb.js";',
+    );
+    expect(output).toContain(
       'export interface QuotePluginHandlers',
     );
     expect(output).toContain(
@@ -51,6 +54,8 @@ describe("generateTsHandlersSource", () => {
     );
     expect(output).toContain("canonicalName: \"balance.plugins.quote.v1.QuotePluginService/Init\"");
     expect(output).toContain("localName: \"getPrice\"");
+    expect(output).toContain("inputSchema: InitRequestSchema");
+    expect(output).toContain("outputSchema: GetPriceResponseSchema");
     expect(output).toContain("methodId:");
   });
 });
