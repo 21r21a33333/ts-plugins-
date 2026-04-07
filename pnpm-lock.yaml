@@ -39,6 +39,9 @@ importers:
       '@balance/plugin-codegen':
         specifier: workspace:*
         version: link:../plugin-codegen
+      cac:
+        specifier: ^6.7.14
+        version: 6.7.14
       pacote:
         specifier: ^21.0.3
         version: 21.5.0

@@ -12,3 +12,4 @@ export {
   type InstalledPlugin,
   type PluginInstallSource,
 } from "./install.js";
+export { createCli, runCli, type CliIo } from "./cli.js";
