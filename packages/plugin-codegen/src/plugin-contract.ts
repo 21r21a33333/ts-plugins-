@@ -1,4 +1,4 @@
-import type { DescMethod, DescService } from "@bufbuild/protobuf";
+import type { DescMessage, DescMethod, DescService } from "@bufbuild/protobuf";
 
 import { canonicalMethodName, stableMethodId } from "./method-ids.js";
 
@@ -9,6 +9,8 @@ export interface PluginMethodDefinition {
   methodId: number;
   inputType: string;
   outputType: string;
+  inputSchema?: DescMessage;
+  outputSchema?: DescMessage;
 }
 
 export interface PluginServiceDefinition {

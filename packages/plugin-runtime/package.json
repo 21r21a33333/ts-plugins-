@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@balance/plugin-codegen": "workspace:*",
+    "@balance/plugin-generated": "workspace:*",
+    "@bufbuild/protobuf": "^2.11.0",
     "@opentelemetry/api": "^1.9.0",
     "ioredis": "^5.8.2",
     "piscina": "^5.1.3"

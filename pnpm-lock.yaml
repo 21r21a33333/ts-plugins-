@@ -54,6 +54,12 @@ importers:
       '@balance/plugin-codegen':
         specifier: workspace:*
         version: link:../plugin-codegen
+      '@balance/plugin-generated':
+        specifier: workspace:*
+        version: link:../plugin-generated
+      '@bufbuild/protobuf':
+        specifier: ^2.11.0
+        version: 2.11.0
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1

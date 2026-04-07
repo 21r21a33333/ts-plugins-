@@ -43,6 +43,21 @@ export {
   type WarmCacheSetOptions,
 } from "./cache.js";
 export {
+  PROTOCOL_VERSION,
+  createControlEnvelope,
+  createFrameworkErrorEnvelope,
+  createRpcResponseEnvelope,
+  decodePayload,
+  encodeFrame,
+  encodePayload,
+  tryDecodeFrames,
+} from "./protocol.js";
+export {
+  startPluginSocketRuntimeServer,
+  type PluginSocketRuntimeServer,
+  type StartPluginSocketRuntimeServerInput,
+} from "./socket-server.js";
+export {
   PluginWorkerPool,
   WorkerPoolOverloadedError,
   type PluginConcurrencyMode,
