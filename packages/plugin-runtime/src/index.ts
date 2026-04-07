@@ -8,6 +8,15 @@ export { definePlugin, type PluginHandler, type PluginHandlerMap } from "./defin
 export { createPluginDispatcher, type PluginDispatcher } from "./dispatcher.js";
 export { executePluginHandler, PluginExecutionError } from "./errors.js";
 export {
+  createMemoryKvBackend,
+  createPluginKvStore,
+  MemoryKvBackend,
+  MemoryPluginKvStore,
+  RedisPluginKvStore,
+  type PluginKvStore,
+  type RuntimeKvConfig,
+} from "./kv.js";
+export {
   WarmCache,
   type MemoryPressureConfig,
   type MemoryPressureState,
