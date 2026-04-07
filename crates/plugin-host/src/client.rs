@@ -38,7 +38,7 @@ where
         TResponse: Message + Default,
     {
         let request_id = self.take_request_id();
-        let payload = encode_message(request)?;
+        let payload = encode_request_message(request)?;
 
         let response = self.transport.send(ProtocolMessage::RpcRequest {
             request_id,
@@ -94,6 +94,9 @@ pub enum PluginHostError {
     Decode(String),
     Framework(FrameworkError),
     Transport(String),
+    Overloaded(String),
+    Timeout { request_id: u64, timeout: std::time::Duration },
+    CircuitOpen,
     UnexpectedRequestId { expected: u64, actual: u64 },
     UnexpectedMessage(ProtocolMessage),
 }
@@ -109,6 +112,13 @@ impl core::fmt::Display for PluginHostError {
                 error.code, error.message
             ),
             Self::Transport(error) => write!(f, "transport error: {error}"),
+            Self::Overloaded(error) => write!(f, "host scheduler overloaded: {error}"),
+            Self::Timeout { request_id, timeout } => write!(
+                f,
+                "request {request_id} timed out after {}ms",
+                timeout.as_millis()
+            ),
+            Self::CircuitOpen => write!(f, "circuit breaker is open"),
             Self::UnexpectedRequestId { expected, actual } => write!(
                 f,
                 "response request ID mismatch: expected {expected}, received {actual}"
@@ -122,10 +132,53 @@ impl core::fmt::Display for PluginHostError {
 
 impl std::error::Error for PluginHostError {}
 
-fn encode_message(message: &impl Message) -> Result<Bytes, PluginHostError> {
+pub(crate) fn encode_request_message(
+    message: &impl Message,
+) -> Result<Bytes, PluginHostError> {
     let mut buffer = Vec::new();
     message
         .encode(&mut buffer)
         .map_err(|error| PluginHostError::Encode(error.to_string()))?;
     Ok(Bytes::from(buffer))
+}
+
+pub(crate) fn decode_response_message<TResponse>(
+    request_id: u64,
+    response: ProtocolMessage,
+) -> Result<TResponse, PluginHostError>
+where
+    TResponse: Message + Default,
+{
+    match response {
+        ProtocolMessage::RpcResponse {
+            request_id: response_request_id,
+            payload,
+            ..
+        } => {
+            if response_request_id != request_id {
+                return Err(PluginHostError::UnexpectedRequestId {
+                    expected: request_id,
+                    actual: response_request_id,
+                });
+            }
+
+            TResponse::decode(payload)
+                .map_err(|error| PluginHostError::Decode(error.to_string()))
+        }
+        ProtocolMessage::Error {
+            request_id: response_request_id,
+            error,
+            ..
+        } => {
+            if response_request_id != request_id {
+                return Err(PluginHostError::UnexpectedRequestId {
+                    expected: request_id,
+                    actual: response_request_id,
+                });
+            }
+
+            Err(PluginHostError::Framework(error))
+        }
+        other => Err(PluginHostError::UnexpectedMessage(other)),
+    }
 }

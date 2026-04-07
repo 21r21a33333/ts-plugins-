@@ -7,6 +7,7 @@ mod dynamic;
 mod health;
 mod registry;
 mod runtime_handle;
+mod scheduler;
 mod supervisor;
 #[cfg(unix)]
 mod unix_socket;
@@ -21,6 +22,7 @@ pub use registry::{
     PluginRegistryEntry,
 };
 pub use runtime_handle::{HostRuntimeConfig, RuntimeFactory, RuntimeHandle, RuntimeInitContext};
+pub use scheduler::{ScheduledPluginHost, ScheduledPluginHostConfig};
 pub use supervisor::{
     RuntimeSupervisor, SupervisorError, SupervisorProcessFactory, SupervisorRuntime,
     TokioProcessFactory,

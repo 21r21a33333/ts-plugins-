@@ -21,6 +21,10 @@ import {
   type RuntimeKvConfig,
 } from "./kv.js";
 import {
+  PluginWorkerPool,
+  type PluginConcurrencyMode,
+} from "./worker-pool.js";
+import {
   createControlEnvelope,
   createFrameworkErrorEnvelope,
   createRpcResponseEnvelope,
@@ -47,10 +51,37 @@ export interface StartPluginSocketRuntimeServerInput
   service: PluginServiceDefinition;
   kvConfig?: RuntimeKvConfig;
   memoryKvBackend?: MemoryKvBackend;
+  createWorkerPool?: (
+    options: PluginSocketWorkerPoolOptions,
+  ) => PluginSocketWorkerPool;
 }
 
 export interface PluginSocketRuntimeServer {
   close(): Promise<void>;
+}
+
+export interface PluginSocketWorkerPoolTask {
+  entrypointPath: string;
+  manifest: BootstrapPluginRuntimeInput["manifest"];
+  serviceTypeName: string;
+  runtimeInstanceId: string;
+  requestId: string;
+  method: Omit<SchemaAwarePluginMethodDefinition, "inputSchema" | "outputSchema">;
+  request: unknown;
+  initRequest?: unknown;
+  kvConfig?: RuntimeKvConfig;
+  traceContext?: WireEnvelope["traceContext"];
+}
+
+export interface PluginSocketWorkerPool {
+  run(task: PluginSocketWorkerPoolTask, timeoutMs?: number): Promise<unknown>;
+  queueSize(): number;
+  destroy(): Promise<void>;
+}
+
+export interface PluginSocketWorkerPoolOptions {
+  workerFile: string;
+  concurrency: PluginConcurrencyMode;
 }
 
 export async function startPluginSocketRuntimeServer(
@@ -78,6 +109,8 @@ export async function startPluginSocketRuntimeServer(
   const methodsById = new Map(
     service.methods.map((method) => [method.methodId, method] as const),
   );
+  let lastInitRequest: unknown;
+  const workerPool = createWorkerPoolIfNeeded(input);
 
   const sockets = new Set<net.Socket>();
   const server = net.createServer((socket) => {
@@ -170,13 +203,34 @@ export async function startPluginSocketRuntimeServer(
           method.name === "Init"
             ? input.manifest.runtime?.initTimeoutMs
             : input.manifest.runtime?.requestTimeoutMs;
+        const invocation =
+          workerPool !== undefined && method.name !== "Init"
+            ? workerPool.run(
+                {
+                  entrypointPath: input.entrypointPath!,
+                  manifest: input.manifest,
+                  serviceTypeName: service.typeName,
+                  runtimeInstanceId: `${input.manifest.id}-runtime`,
+                  requestId: requestId.toString(),
+                  method: stripSchemas(method),
+                  request,
+                  initRequest: lastInitRequest,
+                  kvConfig: input.kvConfig,
+                  traceContext,
+                },
+                timeoutMs,
+              )
+            : method.name === "Init"
+              ? runtime.initialize(request, { traceContext })
+              : runtime.invoke(methodId, request, { traceContext });
         const result = await withTimeout(
-          method.name === "Init"
-            ? runtime.initialize(request, { traceContext })
-            : runtime.invoke(methodId, request, { traceContext }),
+          invocation,
           timeoutMs,
           `${method.canonicalName} timed out after ${timeoutMs}ms`,
         );
+        if (method.name === "Init") {
+          lastInitRequest = request;
+        }
 
         return createRpcResponseEnvelope({
           requestId,
@@ -218,6 +272,7 @@ export async function startPluginSocketRuntimeServer(
       await new Promise<void>((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));
       });
+      await workerPool?.destroy();
       await kvStore?.disconnect();
       await rm(input.socketPath, { force: true });
     },
@@ -261,4 +316,53 @@ function assertSchemaAwareService(
   }
 
   return service as SchemaAwarePluginServiceDefinition;
+}
+
+function createWorkerPoolIfNeeded(
+  input: StartPluginSocketRuntimeServerInput,
+): PluginSocketWorkerPool | undefined {
+  const concurrency = input.manifest.runtime?.concurrency;
+  if (concurrency === undefined || concurrency.mode === "serial") {
+    return undefined;
+  }
+
+  if (input.createWorkerPool !== undefined) {
+    return input.createWorkerPool({
+      workerFile: new URL("./request-worker.js", import.meta.url).pathname,
+      concurrency: normalizeConcurrency(concurrency),
+    });
+  }
+
+  if (input.entrypointPath === undefined) {
+    return undefined;
+  }
+
+  return new PluginWorkerPool<PluginSocketWorkerPoolTask, unknown>({
+    workerFile: new URL("./request-worker.js", import.meta.url).pathname,
+    concurrency: normalizeConcurrency(concurrency),
+  });
+}
+
+function stripSchemas(
+  method: SchemaAwarePluginMethodDefinition,
+): Omit<SchemaAwarePluginMethodDefinition, "inputSchema" | "outputSchema"> {
+  const { inputSchema: _inputSchema, outputSchema: _outputSchema, ...rest } = method;
+  return rest;
+}
+
+function normalizeConcurrency(
+  concurrency: NonNullable<
+    NonNullable<StartPluginSocketRuntimeServerInput["manifest"]["runtime"]>["concurrency"]
+  >,
+): PluginConcurrencyMode {
+  if (concurrency.mode === "serial") {
+    return { mode: "serial" };
+  }
+  if (concurrency.mode === "parallel-safe") {
+    return { mode: "parallel-safe" };
+  }
+  return {
+    mode: "max_concurrency",
+    maxConcurrency: concurrency.maxConcurrency ?? 1,
+  };
 }

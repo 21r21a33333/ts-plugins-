@@ -505,6 +505,116 @@ describe("startPluginSocketRuntimeServer", () => {
 
     await server.close();
   });
+
+  it("routes non-serial request handling through the worker-pool path", async () => {
+    const tempDir = await mkdtemp(join(os.tmpdir(), "plugin-runtime-socket-"));
+    tempDirs.push(tempDir);
+    const socketPath = join(tempDir, "plugin.sock");
+    const seenTasks: unknown[] = [];
+
+    const server = await startPluginSocketRuntimeServer({
+      socketPath,
+      manifest: {
+        id: "quote-plugin",
+        version: "1.0.0",
+        runtime: {
+          concurrency: {
+            mode: "parallel-safe",
+          },
+        },
+      },
+      service: runtimeService,
+      loadModule: async () => ({
+        default: definePlugin({
+          async init() {
+            return {
+              outcome: {
+                case: "ok",
+                value: {
+                  pluginName: "quote-plugin",
+                  pluginVersion: "1.0.0",
+                },
+              },
+            };
+          },
+          async getPrice() {
+            throw new Error("main-thread handler should not run");
+          },
+        }),
+      }),
+      createWorkerPool: () => ({
+        async run(task: unknown) {
+          seenTasks.push(task);
+          return {
+            outcome: {
+              case: "ok",
+              value: {
+                price: "worker",
+                currency: "USD",
+                expiresAt: "2030-01-01T00:00:00Z",
+              },
+            },
+          };
+        },
+        queueSize() {
+          return 0;
+        },
+        async destroy() {},
+      }),
+    });
+
+    const socket = await connect(socketPath);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 1n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 2026714057,
+            payload: toBinary(
+              InitRequestSchema,
+              create(InitRequestSchema, {
+                pluginInstanceId: "quote-plugin",
+                environment: "production",
+                config: {},
+              }),
+            ),
+          },
+        },
+      }),
+    );
+    await readEnvelope(socket);
+
+    await writeEnvelope(
+      socket,
+      create(WireEnvelopeSchema, {
+        protocolVersion: 1,
+        requestId: 2n,
+        body: {
+          case: "rpcRequest",
+          value: {
+            methodId: 758358830,
+            payload: toBinary(
+              GetPriceRequestSchema,
+              create(GetPriceRequestSchema, {
+                asset: "BTC",
+                amount: "1",
+              }),
+            ),
+          },
+        },
+      }),
+    );
+
+    const response = await readEnvelope(socket);
+    expect(response.body.case).toBe("rpcResponse");
+    expect(seenTasks).toHaveLength(1);
+
+    await server.close();
+  });
 });
 
 async function connect(socketPath: string): Promise<net.Socket> {
