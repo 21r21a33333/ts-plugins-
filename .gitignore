@@ -1,7 +1,47 @@
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Build outputs
 dist/
 target/
-Cargo.lock
 .turbo/
+
+# VitePress (docs site)
+docs/site/.vitepress/cache/
+docs/site/.vitepress/dist/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Tests & coverage
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor backups
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+
+# Project-specific
+Cargo.lock
 .superpowers/
-.pnpm-store/
