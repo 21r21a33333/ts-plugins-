@@ -109,6 +109,13 @@ pnpm -r test
 cargo test
 ```
 
+Documentation site:
+
+```bash
+pnpm run docs:dev
+pnpm run docs:build
+```
+
 Targeted end-to-end checks:
 
 ```bash
@@ -140,3 +147,4 @@ cargo run --manifest-path examples/rust-caller/Cargo.toml -- \
 ## Operations
 
 Operational notes for Redis-backed KV, restart recovery, and tracing are in [docs/operations.md](./docs/operations.md).
+Published-style developer docs live under [docs/site](./docs/site).

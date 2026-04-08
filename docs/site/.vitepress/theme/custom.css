@@ -1,0 +1,13 @@
+:root {
+  --vp-c-brand-1: #0f766e;
+  --vp-c-brand-2: #115e59;
+  --vp-c-brand-3: #134e4a;
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #0f766e 30%, #1d4ed8 100%);
+  --vp-home-hero-image-background-image: radial-gradient(circle at center, rgba(15, 118, 110, 0.18), rgba(29, 78, 216, 0.18));
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.VPHero .image-bg {
+  border-radius: 24px;
+}

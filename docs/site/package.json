@@ -1,0 +1,16 @@
+{
+  "name": "@balance/docs-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vitepress build",
+    "docs:build": "vitepress build",
+    "docs:dev": "vitepress dev",
+    "docs:preview": "vitepress preview",
+    "lint": "vitepress build"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.13"
+  }
+}
